@@ -58,4 +58,8 @@ python src/main.py --exp-name classifier --cuda --run-id mnist --train-batch-siz
 python src/main.py --run-id mnist-svhn --exp-name UDT --train-batch-size 64 --test-batch-size 50 udt --eval-model-path ./experiments/classifier/classifier-wide_mnist-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path /experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
 ```
 
-
+## Visualizing the results
+We use tensorboard for saving the artefacts. It is possible to view the results by simply invoking tensorboard in the folder where the results were saved
+```
+tensorboard --logdir .
+```
