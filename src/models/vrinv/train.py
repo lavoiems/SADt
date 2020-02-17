@@ -132,7 +132,7 @@ def train(args):
             ploss, nloss, gp = contrastive_loss(datax, args.n_classes, encoder, contrastive, args.device)
             ploss.backward()
             nloss.backward(mone)
-            (10.0 * gp).backward()
+            (1 * gp).backward()
             optim_contrastive.step()
 
         optim_encoder.zero_grad()

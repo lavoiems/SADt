@@ -10,6 +10,7 @@ from models import vrinv
 from models import cycle_gan
 from models import vmt_cluster
 from models import cycada
+from models import udt
 
 _models_ = {
     'classifier': classifier,
@@ -19,6 +20,7 @@ _models_ = {
     'cycle_gan': cycle_gan,
     'vmt_cluster': vmt_cluster,
     'cycada': cycada,
+    'udt': udt,
 }
 
 

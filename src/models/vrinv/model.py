@@ -40,6 +40,10 @@ class Contrastive(nn.Module):
                                nn.LeakyReLU(0.2, inplace=True),
                                nn.Linear(h_dim, h_dim),
                                nn.LeakyReLU(0.2, inplace=True),
+                               nn.Linear(h_dim, h_dim),
+                               nn.LeakyReLU(0.2, inplace=True),
+                               nn.Linear(h_dim, h_dim),
+                               nn.LeakyReLU(0.2, inplace=True),
                                nn.Linear(h_dim, 1))
 
     def forward(self, a):

@@ -12,8 +12,6 @@ class Critic(nn.Module):
              nn.LeakyReLU(0.2, inplace=True),
              nn.Conv2d(2*h_dim, 4*h_dim, 4, 2, 1),
              nn.LeakyReLU(0.2, inplace=True),
-             nn.Conv2d(4*h_dim, 4*h_dim, 4, 2, 1),
-             nn.LeakyReLU(0.2, inplace=True),
              nn.Conv2d(4*h_dim, 1, 4, 1, 0)]
         self.x = nn.Sequential(*x)
 
@@ -34,9 +32,6 @@ class Generator(nn.Module):
                    nn.Conv2d(2*h_dim, 4*h_dim, 4, 2, 1),
                    nn.BatchNorm2d(4*h_dim),
                    nn.ReLU(inplace=True),
-                   nn.Conv2d(4*h_dim, 4*h_dim, 4, 2, 1),
-                   nn.BatchNorm2d(4*h_dim),
-                   nn.ReLU(inplace=True),
                    nn.Conv2d(4*h_dim, 4*h_dim, 4, 1, 0)]
         self.encoder = nn.Sequential(*encoder)
 
@@ -47,9 +42,6 @@ class Generator(nn.Module):
                    nn.BatchNorm2d(2*h_dim),
                    nn.ReLU(inplace=True),
                    nn.ConvTranspose2d(2*h_dim, h_dim, 4, 2, 1),
-                   nn.BatchNorm2d(h_dim),
-                   nn.ReLU(inplace=True),
-                   nn.ConvTranspose2d(h_dim, h_dim, 4, 2, 1),
                    nn.BatchNorm2d(h_dim),
                    nn.ReLU(inplace=True),
                    nn.ConvTranspose2d(h_dim, o_dim, 4, 2, 1),
