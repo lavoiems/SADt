@@ -30,7 +30,6 @@ python src/main.py --exp-name cluster --cuda --run-id mnist vrinv --dataset1 imn
 ```
 
 ### Domain adaptation with clustering
-Model inspired form: https://github.com/xudonmao/VMT
 
 **MNIST-to-SVHN**
 ```
@@ -39,7 +38,6 @@ python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster
 
 
 ### Classifier for UDT evaluation
-Model inspired from: https://github.com/szagoruyko/wide-residual-networks
 
 **MNIST**
 ```
