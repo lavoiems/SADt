@@ -48,7 +48,7 @@ python src/main.py --exp-name classifier --cuda --run-id svhn --train-batch-size
 
 **MNIST-to-SVHN**
 ```
-python src/main.py --run-id mnist-svhn --exp-name UDT --train-batch-size 64 --test-batch-size 50 udt --eval-model-path ./experiments/classifier/classifier_svhn-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
+python src/main.py --run-id mnist-svhn --exp-name UDT --train-batch-size 64 --test-batch-size 50 --cuda udt --eval-model-path ./experiments/classifier/classifier_svhn-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
 ```
 
 ## Visualizing the results
