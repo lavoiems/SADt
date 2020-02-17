@@ -33,7 +33,7 @@ python src/main.py --exp-name cluster --cuda --run-id mnist vrinv --dataset1 imn
 
 **MNIST-to-SVHN**
 ```
-python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster --dataset1 mnist --dataset2 svhn --cluster-model-path ./experiments/vrinv/cluster_mnist --cluster-model vrinv --dw 0.01 --svw 1 --tvw 0.06 --tcw 0.06 --smw 1 --tmw 0.06
+python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster --dataset1 mnist --dataset2 svhn --cluster-model-path ./experiments/vrinv/cluster_mnist-None --cluster-model vrinv --dw 0.01 --svw 1 --tvw 0.06 --tcw 0.06 --smw 1 --tmw 0.06
 ```
 
 
