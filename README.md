@@ -30,32 +30,29 @@ python src/main.py --exp-name cluster --cuda --run-id mnist vrinv --dataset1 imn
 ```
 
 ### Domain adaptation with clustering
-Model inspired form: https://github.com/xudonmao/VMT
 
 **MNIST-to-SVHN**
 ```
-python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster --dataset1 mnist --dataset2 svhn --cluster-model-path ./experiments/vrinv/cluster_mnist --cluster-model vrinv --dw 0.01 --svw 1 --tvw 0.06 --tcw 0.06 --smw 1 --tmw 0.06
+python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster --dataset1 mnist --dataset2 svhn --cluster-model-path ./experiments/vrinv/cluster_mnist-None --cluster-model vrinv --dw 0.01 --svw 1 --tvw 0.06 --tcw 0.06 --smw 1 --tmw 0.06
 ```
 
 
 ### Classifier for UDT evaluation
-Model inspired from: https://github.com/szagoruyko/wide-residual-networks
-
-**MNIST**
-```
-python src/main.py --exp-name classifier --cuda --run-id mnist --train-batch-size 128 classifier --dataset mnist
-```
 
 **SVHN** 
 ```
-python src/main.py --exp-name classifier --cuda --run-id mnist --train-batch-size 128 classifier --dataset svhn_extra
+python src/main.py --exp-name classifier --cuda --run-id svhn --train-batch-size 128 --valid-split 0.2 classifier --dataset svhn_extra
 ```
 
 ### Conditional generation
 
 **MNIST-to-SVHN**
 ```
-python src/main.py --run-id mnist-svhn --exp-name UDT --train-batch-size 64 --test-batch-size 50 udt --eval-model-path ./experiments/classifier/classifier-wide_mnist-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path /experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
+python src/main.py --run-id mnist-svhn --exp-name UDT --train-batch-size 64 --test-batch-size 50 --cuda udt --eval-model-path ./experiments/classifier/classifier_svhn-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
 ```
 
-
+## Visualizing the results
+We use tensorboard for saving the artefacts. It is possible to view the results by simply invoking tensorboard in the folder where the results were saved
+```
+tensorboard --logdir .
+```
