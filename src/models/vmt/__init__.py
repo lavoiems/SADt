@@ -1,3 +1,5 @@
+# Model inspired form: https://github.com/xudonmao/VMT
+
 from .train import train
 from common.loaders import images
 
