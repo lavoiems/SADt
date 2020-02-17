@@ -41,7 +41,7 @@ python src/main.py --exp-name vmt-cluster --cuda --run-id mnist-svhn vmt_cluster
 
 **SVHN** 
 ```
-python src/main.py --exp-name classifier --cuda --run-id mnist --train-batch-size 128 --valid-split 0.2 classifier --dataset svhn_extra
+python src/main.py --exp-name classifier --cuda --run-id svhn --train-batch-size 128 --valid-split 0.2 classifier --dataset svhn_extra
 ```
 
 ### Conditional generation
