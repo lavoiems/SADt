@@ -179,6 +179,9 @@ def train(args):
             test_accuracy_x = evaluate(test_loader1, classifier, args.device)
             test_accuracy_y = evaluate(test_loader2, classifier, args.device)
 
+            print("Test Acc-X", test_accuracy_x)
+            print("Test Acc-Y", test_accuracy_y)
+
             save_path = args.save_path
             with open(os.path.join(save_path, 'c_loss'), 'a') as f: f.write(f'{i},{c_loss.cpu().item()}\n')
             with open(os.path.join(save_path, 'tcw_loss'), 'a') as f: f.write(f'{i},{tcw_loss.cpu().item()}\n')
@@ -207,3 +210,7 @@ def train(args):
             t0 = time.time()
             save_models(models, i, args.model_path, args.evaluate)
             save_models(optims, i, args.model_path, args.evaluate)
+
+
+
+
