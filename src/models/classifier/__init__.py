@@ -1,3 +1,5 @@
+# Model inspired from: https://github.com/szagoruyko/wide-residual-networks
+      
 from .train import train
 from common.loaders import images
 
