@@ -136,34 +136,6 @@ def visda(root, train_batch_size, test_batch_size, use_normalize=False, **kwargs
     return train_loader, test_loader, shape, n_classes
 
 
-def stargan_visda(root1, root2, train_batch_size, test_batch_size, **kwargs):
-    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    train_transform = transforms.Compose([
-        transforms.Resize((256, 256), interpolation=1),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normalize,
-    ])
-    test_transform = transforms.Compose([
-        transforms.Resize((256, 256), interpolation=1),
-        transforms.ToTensor(),
-        normalize,
-    ])
-    train1 = datasets.ImageFolder(root1, transform=train_transform)
-    train2 = datasets.ImageFolder(root2, transform=test_transform)
-    train = StarganDataset(train1, train2)
-    test1 = datasets.ImageFolder(root1, transform=train_transform)
-    test2 = datasets.ImageFolder(root2, transform=test_transform)
-    test = StarganDataset(test1, test2)
-
-    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
-                                   num_workers=10, drop_last=True)
-    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
-                                  num_workers=10, drop_last=False)
-    shape = train_loader.dataset[0][0].shape
-    return train_loader, test_loader, shape, None
-
-
 def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     train_transform = transforms.Compose([
