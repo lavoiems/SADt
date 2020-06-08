@@ -1,42 +1,9 @@
-import math
-import gzip
 import random
-import codecs
 import torch.utils.data as data
-from PIL import Image
-import errno
-import os
-import os.path
 import numpy as np
-from torchvision.datasets.utils import download_url, makedir_exist_ok
-from torch.utils.model_zoo import tqdm
 import torch
 from torchvision import datasets, transforms
-from skimage import transform, filters
-from quickdraw import QuickDrawData
 from torch.utils.data.sampler import SubsetRandomSampler
-
-
-class Rotate(object):
-    def __call__(self, img):
-        img = np.asarray(img, np.uint8)
-        d = random.randrange(-30, 30)
-        img = transform.rotate(img, d, mode='edge', order=4)
-        return img
-
-
-class Jitter(object):
-    def __call__(self, img):
-        if random.random() > 0.75:
-            return img
-        img = transforms.ColorJitter((0.5, 1), (0.5, 1), 1, 0.5)(img)
-        return img
-
-
-class Rescale(object):
-    def __call__(self, img):
-        img = transforms.RandomResizedCrop(img.size[1], scale=(0.5, 1.5))(img)
-        return img
 
 
 def svhn(root, train_batch_size, test_batch_size, valid_split=0, **kwargs):
@@ -44,8 +11,6 @@ def svhn(root, train_batch_size, test_batch_size, valid_split=0, **kwargs):
         transforms.ToTensor(),))
     train = datasets.SVHN(root, split='train', download=True, transform=transform)
     n_classes = len(set(train.labels))
-    #extra = datasets.SVHN(root, split='extra', download=True, transform=transform)
-    #train = torch.utils.data.ConcatDataset((train, extra))
     test = datasets.SVHN(root, split='test', download=True, transform=transform)
 
     idxes = np.arange(len(train))
@@ -118,99 +83,6 @@ def mnist(root, train_batch_size, test_batch_size, valid_split=0, **kwargs):
     return train_loader, valid_loader, test_loader, shape, n_classes
 
 
-def quickdraw(root, train_batch_size, test_batch_size, **kwargs):
-    classes = ['t-shirt', 'pants', 'shoe', 'purse']
-    transform = transforms.Compose([
-        transforms.Resize(32, interpolation=1),
-        transforms.ToTensor(),
-    ])
-    train = QuickDrawDataset(root, classes, transform)
-    test = QuickDrawDataset(root, classes, transform)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
-                                               shuffle=True, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size or train_batch_size,
-                                              shuffle=True, num_workers=8)
-
-    shape = train_loader.dataset[0][0].shape
-    n_classes = len(set(train.classes))
-
-    return train_loader, test_loader, shape, n_classes
-
-
-def iquickdraw(root, train_batch_size, test_batch_size, **kwargs):
-    classes = ['t-shirt', 'pants', 'shoe', 'purse']
-    transform = transforms.Compose([
-        transforms.Resize(32, interpolation=1),
-        transforms.ToTensor(),
-    ])
-    train = QuickDrawDataset(root, classes, transform)
-    n_classes = len(set(train.classes))
-    t = [
-        transforms.RandomAffine(30, (0, 0), (0.8, 1.2), 30, fillcolor=(255,255,255)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor()]
-    train = MultiTransformDataset(train, t)
-    test = QuickDrawDataset(root, classes, transform)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
-                                               shuffle=True, num_workers=8, drop_last=True)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size or train_batch_size,
-                                              shuffle=False, num_workers=8)
-
-    shape = train_loader.dataset[0][0].shape
-
-    return train_loader, test_loader, shape, n_classes
-
-
-def fashion(root, train_batch_size, test_batch_size=None, **kwargs):
-    transform = transforms.Compose([
-        transforms.Resize(32),
-        transforms.ToTensor(),
-        triple_channel,
-    ])
-    train = datasets.FashionMNIST(root, train=True, download=True, transform=transform)
-    test = datasets.FashionMNIST(root, train=False, download=True, transform=transform)
-
-    classes = [0, 1, 7, 8]
-    train = FilterDataset(train, classes)
-    test = FilterDataset(test, classes)
-
-    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
-                                               shuffle=True, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size,
-                                              shuffle=True, num_workers=8)
-
-    shape = train_loader.dataset[0][0].shape
-    n_classes = len(set(train.classes))
-    return train_loader, test_loader, shape, n_classes
-
-
-def inverse(x):
-    return 1-x
-
-
-def omniglot(root, train_batch_size, test_batch_size, **kwargs):
-    transform = transforms.Compose([
-        transforms.Resize(32, interpolation=0),
-        transforms.ToTensor(),
-        inverse,
-        triple_channel,
-    ])
-    train = datasets.ImageFolder(root, transform=transform)
-    n_classes = 100
-    t = [transforms.RandomAffine(30, (0, 0), (0.7, 1.3), 40), transforms.ToTensor()]
-    train = MultiTransformDataset(train, t)
-    test = datasets.ImageFolder(root, transform=transform)
-
-    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
-                                               shuffle=True, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size or train_batch_size,
-                                              shuffle=True, num_workers=8)
-
-    shape = train_loader.dataset[0][0].shape
-
-    return train_loader, test_loader, shape, n_classes
-
-
 def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     transform = transforms.Compose([
         transforms.Resize(32, interpolation=0),
@@ -233,42 +105,125 @@ def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     return train_loader, test_loader, test_loader, shape, n_classes
 
 
-def isvhn(root, train_batch_size, test_batch_size, valid_split, **kwargs):
-    transform = transforms.Compose((
-        transforms.Resize(32, interpolation=0),
+def visda(root, train_batch_size, test_batch_size, use_normalize=False, **kwargs):
+    train_transform = [
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-    ))
-    train = datasets.SVHN(root, split='train', download=True, transform=transform)
-    n_classes = len(set(train.labels))
-    shape = train[0][0].shape
-    t = [Rescale(), Jitter(), Rotate(), transforms.ToTensor(), triple_channel]
-    train = MultiTransformDataset(train, t)
-    test = datasets.SVHN(root, split='test', download=True, transform=transform)
+    ]
+    test_transform = [
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.ToTensor(),
+    ]
 
-    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
-                                               shuffle=True, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size or train_batch_size,
-                                              shuffle=True, num_workers=8)
+    if use_normalize:
+        normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
+        train_transform.append(normalize)
+        test_transform.append(normalize)
 
-    return train_loader, test_loader, test_loader, shape, n_classes
+    train_transform = transforms.Compose(train_transform)
+    test_transform = transforms.Compose(test_transform)
+    train = datasets.ImageFolder(root, transform=train_transform)
+    test = datasets.ImageFolder(root, transform=test_transform)
+
+    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, pin_memory=False,
+                                               shuffle=True, num_workers=10, drop_last=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
+                                              num_workers=10, drop_last=False)
+
+    shape = train_loader.dataset[0][0].shape
+    n_classes = len(set(train.classes))
+    return train_loader, test_loader, shape, n_classes
 
 
-class FilterDataset(data.Dataset):
-    def __init__(self, dataset, classes):
-        filtered_dataset = list(filter(lambda x: x[1] in classes, dataset))
-        images = list(map(lambda x: x[0], filtered_dataset))
-        labels = [classes.index(data[1]) for data in filtered_dataset]
+def stargan_visda(root1, root2, train_batch_size, test_batch_size, **kwargs):
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    train_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    test_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    train1 = datasets.ImageFolder(root1, transform=train_transform)
+    train2 = datasets.ImageFolder(root2, transform=test_transform)
+    train = StarganDataset(train1, train2)
+    test1 = datasets.ImageFolder(root1, transform=train_transform)
+    test2 = datasets.ImageFolder(root2, transform=test_transform)
+    test = StarganDataset(test1, test2)
 
-        self.tensor = images
-        self.classes = labels
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
+                                   num_workers=10, drop_last=True)
+    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
+                                  num_workers=10, drop_last=False)
+    shape = train_loader.dataset[0][0].shape
+    return train_loader, test_loader, shape, None
+
+
+def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    train_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    test_transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    train1 = datasets.ImageFolder(root1, transform=train_transform)
+    train2 = datasets.ImageFolder(root2, transform=test_transform)
+    train = CondDataset(train1, train2, semantics, nc, device)
+    test1 = datasets.ImageFolder(root1, transform=train_transform)
+    test2 = datasets.ImageFolder(root2, transform=test_transform)
+    test = CondDataset(test1, test2, semantics, nc, device)
+
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
+                                   num_workers=10, drop_last=True)
+    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
+                                   num_workers=10, drop_last=False)
+    shape = train_loader.dataset[0][0].shape
+    return train_loader, test_loader, shape, nc
+
+
+class CondDataset(data.Dataset):
+    def __init__(self, dataset1, dataset2, semantics, nc, device):
+        labels = []
+        for sample, _ in dataset1:
+            sample = sample.to(device)
+            label = semantics((sample.unsqueeze(0)+1)*0.5).argmax(1)
+            labels.append(label)
+        for sample, _ in dataset2:
+            sample = sample.to(device)
+            label = semantics((sample.unsqueeze(0) + 1) * 0.5).argmax(1)
+            labels.append(label)
+
+        self.labels = torch.LongTensor(labels)
+        self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]
+        self.len_domain1 = len(dataset1)
+        self.dataset = data.ConcatDataset((dataset1, dataset2))
 
     def __getitem__(self, idx):
-        input = self.tensor[idx]
-        target = self.classes[idx]
-        return input, target
+        sample, _ = self.dataset[idx]
+        target = self.labels[idx]
+        domain = int(idx > self.len_domain1)
+        idxs = self.labels_idxs[target]
+        idx2 = idxs[random.randint(0, len(idxs)-1)]
+
+        sample2, _ = self.dataset[idx2]
+        target2 = self.labels[idx2]
+        assert(target == target2)
+        domain2 = int(idx2 > self.len_domain1)
+        return sample, target, domain, sample2, domain2
 
     def __len__(self):
-        return len(self.tensor)
+        return len(self.dataset)
 
 
 class MultiTransformDataset(data.Dataset):
@@ -284,25 +239,3 @@ class MultiTransformDataset(data.Dataset):
 
     def __len__(self):
         return len(self.dataset)
-
-
-class QuickDrawDataset(data.Dataset):
-    def __init__(self, root, classes, transform):
-        self.classes = classes
-        self.labels = torch.arange(len(classes))
-        self.transform = transform
-        self.qdd = QuickDrawData(recognized=True, max_drawings=10000, cache_dir=root)
-        self.qdd.load_drawings(classes)
-
-    def __getitem__(self, idx):
-        c = self.classes[idx%len(self.classes)]
-        label = self.labels[idx%len(self.classes)]
-        img = self.qdd.get_drawing(c).image
-        if self.transform:
-            img = self.transform(img)
-        return img, label
-
-    def __len__(self):
-        return 10000
-
-

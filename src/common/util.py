@@ -53,15 +53,15 @@ def compare(base, transfer):
 
 def save_models(models, iteration, model_path, checkpoint):
     for name, model in models.items():
-        path = os.path.join(model_path, f'{name}_{iteration}')
+        path = os.path.join(model_path, f'{name}:{iteration}')
         torch.save(model.state_dict(), path)
-        rmpath = os.path.join(model_path, f'{name}_{iteration-checkpoint}')
+        rmpath = os.path.join(model_path, f'{name}:{iteration-checkpoint}')
         if os.path.exists(rmpath):
             os.remove(rmpath)
 
 
 def one_hot_embedding(labels, num_classes):
-    y = torch.eye(num_classes)
+    y = torch.eye(num_classes, device=labels.device)
     return y[labels]
 
 
@@ -74,19 +74,3 @@ def sample(iterator, loader, expected_size=None):
     except StopIteration:
         iterator = iter(loader)
         return next(iterator), iterator
-
-
-def PCA(data, k=2):
-    X = data.reshape(data.shape[0], -1)
-    X_mean = torch.mean(X, 0)
-    X = X - X_mean.expand_as(X)
-
-    U,S,V = torch.svd(torch.t(X))
-    return torch.mm(X,U[:,:k])
-
-
-def update_lr(optimizer, lr_decay, min_lr):
-    old_lr = optimizer.param_groups[0]['lr']
-    new_lr = max(min_lr, old_lr * lr_decay)
-    print(f'Updating learning rate from {old_lr} to {new_lr}')
-    optimizer.param_groups[0]['lr'] = new_lr
