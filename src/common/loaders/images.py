@@ -157,7 +157,7 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
     test = CondDataset(test1, test2, semantics, nc, device)
 
     train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
-                                   num_workers=10, drop_last=True)
+                                   num_workers=10, drop_last=True, pin_memory=True)
     test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
                                    num_workers=10, drop_last=False)
     shape = train_loader.dataset[0][0].shape
@@ -167,10 +167,14 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
 class CondDataset(data.Dataset):
     def __init__(self, dataset1, dataset2, semantics, nc, device):
         labels = []
+        print('Infering semantics for dataset1')
         for sample, _ in dataset1:
             sample = sample.to(device)
-            label = semantics((sample.unsqueeze(0)+1)*0.5).argmax(1)
+            sample.unsqueeze_(0)
+            sample = (sample+1)*0.5
+            label = semantics(sample).argmax(1)
             labels.append(label)
+        print('Infering semantics for dataset2')
         for sample, _ in dataset2:
             sample = sample.to(device)
             label = semantics((sample.unsqueeze(0) + 1) * 0.5).argmax(1)

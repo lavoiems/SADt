@@ -43,7 +43,7 @@ def adv_loss(logits, target):
 
 
 def compute_disc_loss(target, generated, domx, domy, discriminator):
-    target.require_grad_()
+    target.requires_grad_()
     dt = discriminator(target, domx)
     lt = adv_loss(dt, 1)
     lgp = r1_reg(dt, target)
@@ -109,7 +109,7 @@ def disc_mapping_loss(datax, label, domx, domy, z_dim, mapping_network, generato
 
 def disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator):
     s = style_encoder(datay, label, domy)
-    gen = generator(datax, s, domy)
+    gen = generator(datax, s)
     lt, lgp, lg = compute_disc_loss(datax, gen, domx, domy, discriminator)
     lcl = ce_loss(datay, label, domy, discriminator.classify)
     return lt, lgp, lg, lcl
@@ -141,7 +141,7 @@ def define_models(**parameters):
 
 def train(args):
     parameters = vars(args)
-    train_loader, valid_loader, test_loader = args.loaders
+    train_loader, test_loader = args.loaders
 
     models = define_models(**parameters)
     initialize(models, args.reload, args.save_path, args.model_path)
@@ -162,7 +162,7 @@ def train(args):
 
     optim_generator = optim.Adam(generator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     optim_mapping_network = optim.Adam(mapping_network.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    optim_style_encoder = optim.Adam(style_encoder.paramters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    optim_style_encoder = optim.Adam(style_encoder.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     optim_discriminator = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
     optims = {
         'optim_generator': optim_generator,
@@ -201,12 +201,12 @@ def train(args):
             dsloss.backward()
             optim_discriminator.step()
 
-        batch, iterator = sample(iterator, train_loader)
-        datax = batch[0].to(args.device)
-        label = batch[1].to(args.device)
-        domx = batch[2].to(args.device)
-        datay = batch[3].to(args.device)
-        domy = batch[4].to(args.device)
+        #batch, iterator = sample(iterator, train_loader)
+        #datax = batch[0].to(args.device)
+        #label = batch[1].to(args.device)
+        #domx = batch[2].to(args.device)
+        #datay = batch[3].to(args.device)
+        #domy = batch[4].to(args.device)
 
         ladv, lcl, lsty, lcyc = gen_mapping_loss(datax, label, domx, domy, args.z_dim, mapping_network, style_encoder, generator, discriminator, args.device)
         gmloss = ladv + args.lambda_lcl*lcl + args.lambda_lsty*lsty + args.lambda_lcyc*lcyc
@@ -238,6 +238,6 @@ def train(args):
                   f'discriminator style loss: {dsloss}, '
                   f'generator mapping loss: {gmloss}, '
                   f'generator style loss: {gsloss})')
-            t0 = time.time()
             save_models(models, i, args.model_path, args.checkpoint)
             save_models(optims, i, args.model_path, args.checkpoint)
+            t0 = time.time()
