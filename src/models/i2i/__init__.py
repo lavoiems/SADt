@@ -9,8 +9,7 @@ def parse_args(parser):
     parser.add_argument('--semantic-model-path', type=str, required=True)
     parser.add_argument('--dataset-loc1', type=str, default='./data')
     parser.add_argument('--dataset-loc2', type=str, default='./data')
-    parser.add_argument('--dataset1', type=str, default='visda')
-    parser.add_argument('--dataset2', type=str, default='visda')
+    parser.add_argument('--dataset', type=str, default='cond_visda')
     parser.add_argument('--h-dim', type=int, default=64)
     parser.add_argument('--d-updates', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-4)
@@ -23,24 +22,19 @@ def parse_args(parser):
 
 
 def execute(args):
-    dataset1 = getattr(images, args.dataset1)
-    dataset2 = getattr(images, args.dataset2)
-    train_loader1, valid_loader1, test_loader1, shape1, nc = dataset1(
-        args.dataset_loc1, args.train_batch_size, args.test_batch_size, args.valid_split)
-    train_loader2, valid_loader2, test_loader2, shape2, _ = dataset2(
-        args.dataset_loc2, args.train_batch_size, args.test_batch_size, args.valid_split)
-    args.loaders1 = (train_loader1, valid_loader1, test_loader1)
-    args.loaders2 = (train_loader2, valid_loader2, test_loader2)
-    args.shape1 = shape1
-    args.shape2 = shape2
+    dataset = getattr(images, args.dataset)
 
     model_definition = import_module('.'.join(('models', 'vmtc_repr', 'train')))
     model_parameters = get_args(args.semantic_model_path)
-    model_parameters['nc'] = nc
-    models = model_definition.define_models(shape1, **model_parameters)
-    semantic = models['classifier']
-    semantic = load_last_model(semantic, 'classifier', args.semantic_model_path)
-    args.semantic = semantic
+    model_parameters['nc'] = args.nc
+    models = model_definition.define_models(**model_parameters)
+    semantics = models['classifier']
+    semantics = load_last_model(semantics, 'classifier', args.semantic_model_path)
+
+    train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
+                                                  args.test_batch_size, args.valid_split, semantics, args.nc,
+                                                  args.device)
+    args.loaders1 = (train_loader, test_loader)
+    args.shape = shape
 
     train(args)
-    evaluate_fid(args)
