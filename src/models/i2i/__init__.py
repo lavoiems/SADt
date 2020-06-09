@@ -1,5 +1,5 @@
 from importlib import import_module
-from .train import train, evaluate_fid
+from .train import train
 from common.loaders import images
 from common.util import get_args
 from common.initialize import load_last_model
