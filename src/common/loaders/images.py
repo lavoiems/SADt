@@ -1,3 +1,4 @@
+import os
 import random
 import torch.utils.data as data
 import numpy as np
@@ -123,8 +124,8 @@ def visda(root, train_batch_size, test_batch_size, use_normalize=False, **kwargs
 
     train_transform = transforms.Compose(train_transform)
     test_transform = transforms.Compose(test_transform)
-    train = datasets.ImageFolder(root, transform=train_transform)
-    test = datasets.ImageFolder(root, transform=test_transform)
+    train = datasets.ImageFolder(os.path.join(root, 'train'), transform=train_transform)
+    test = datasets.ImageFolder(os.path.join(root, 'test'), transform=test_transform)
 
     train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, pin_memory=False,
                                                shuffle=True, num_workers=10, drop_last=True)
@@ -149,17 +150,18 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
         transforms.ToTensor(),
         normalize,
     ])
-    train1 = datasets.ImageFolder(root1, transform=train_transform)
-    train2 = datasets.ImageFolder(root2, transform=test_transform)
+
+    train1 = datasets.ImageFolder(os.path.join(root1, 'train'), transform=train_transform)
+    train2 = datasets.ImageFolder(os.path.join(root2, 'train'), transform=test_transform)
     train = CondDataset(train1, train2, semantics, nc, device)
-    test1 = datasets.ImageFolder(root1, transform=train_transform)
-    test2 = datasets.ImageFolder(root2, transform=test_transform)
+    test1 = datasets.ImageFolder(os.path.join(root1, 'test'), transform=train_transform)
+    test2 = datasets.ImageFolder(os.path.join(root2, 'test'), transform=test_transform)
     test = CondDataset(test1, test2, semantics, nc, device)
 
     train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
                                    num_workers=10, drop_last=True, pin_memory=True)
     test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
-                                   num_workers=10, drop_last=False)
+                                  num_workers=10, drop_last=False)
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, nc
 

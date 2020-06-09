@@ -139,6 +139,24 @@ def define_models(**parameters):
     }
 
 
+@torch.no_grad()
+def evaluate(visualiser, data, y, domain, nz, mapping, generator, i, device):
+    n_gen = 5
+    z = torch.cat(data.shape[0] * [torch.randn(1, n_gen, nz)]).to(device)
+    z.transpose(0, 1).reshape(data.shape[0]*n_gen, nz)
+
+    data = torch.cat(n_gen * [data])
+    y = torch.cat(n_gen * [y])
+    d = torch.cat(n_gen * [0==domain])
+    s_trg = mapping(z, y, d)
+    x_fake = generator(data, s_trg)
+
+    concat = [data] + [x_fake]
+    concat = torch.cat(concat)
+    results = torch.cat([concat[:data.shape[0]], concat[data.shape[0]:]])
+    visualiser.image(results.cpu().numpy(), title=f'Generated', step=i)
+
+
 def train(args):
     parameters = vars(args)
     train_loader, test_loader = args.loaders
@@ -172,6 +190,7 @@ def train(args):
     }
 
     iterator = iter(train_loader)
+    test_iterator = iter(test_loader)
     iteration = infer_iteration(list(models.keys())[0], args.reload, args.model_path, args.save_path)
     t0 = time.time()
     for i in range(iteration, args.iterations):
@@ -233,7 +252,13 @@ def train(args):
             generator_ema.eval()
             mapping_network_ema.eval()
             style_encoder_ema.eval()
-            save_path = args.save_path
+
+            batch, test_iterator = sample(test_iterator, test_loader)
+            data = batch[0].to(args.device)
+            label = batch[1].to(args.device)
+            dom = batch[2].to(args.device)
+            evaluate(args.visualiser, data, label, dom, args.nz, mapping_network_ema, generator_ema, i, args.device)
+
             print(f'Discriminator mapping loss: {dmloss}, '
                   f'discriminator style loss: {dsloss}, '
                   f'generator mapping loss: {gmloss}, '
