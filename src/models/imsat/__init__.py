@@ -3,9 +3,9 @@ from common.loaders import images
 
 
 def parse_args(parser):
-    parser.add_argument('--dataset-loc1', type=str, default='./data')
-    parser.add_argument('--dataset1', type=str, default='imnist')
-    parser.add_argument('--h-dim', type=int, default=64)
+    parser.add_argument('--dataset-loc', type=str, default='./data')
+    parser.add_argument('--dataset', type=str, default='imnist')
+    parser.add_argument('--h-dim', type=int, default=256)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--beta1', type=float, default=0)
     parser.add_argument('--beta2', type=float, default=0.99)

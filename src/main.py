@@ -4,9 +4,7 @@ import torch
 import numpy as np
 from common.util import set_paths, create_paths, dump_args
 from models import classifier
-from models import gan
-from models import vmt
-from models import vrinv
+from models import imsat
 from models import vmt_cluster
 from models import udt
 from models import vmtc_repr
@@ -14,9 +12,7 @@ from models import i2i
 
 _models_ = {
     'classifier': classifier,
-    'gan': gan,
-    'vmt': vmt,
-    'vrinv': vrinv,
+    'imsat': imsat,
     'vmt_cluster': vmt_cluster,
     'udt': udt,
     'vmtc_repr': vmtc_repr,
