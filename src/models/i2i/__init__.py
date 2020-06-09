@@ -30,6 +30,8 @@ def execute(args):
     models = model_definition.define_models(**model_parameters)
     semantics = models['classifier']
     semantics = load_last_model(semantics, 'classifier', args.semantic_model_path)
+    semantics = semantics.to(args.device)
+    semantics.eval()
 
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
