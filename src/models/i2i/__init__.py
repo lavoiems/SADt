@@ -32,7 +32,7 @@ def execute(args):
     semantics = load_last_model(semantics, 'classifier', args.semantic_model_path)
 
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
-                                                  args.test_batch_size, args.valid_split, semantics, args.nc,
+                                                  args.test_batch_size, semantics, args.nc,
                                                   args.device)
     args.loaders1 = (train_loader, test_loader)
     args.shape = shape
