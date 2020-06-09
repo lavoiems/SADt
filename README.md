@@ -85,18 +85,29 @@ model can be done as follows:
 python src/main.py --exp-name vmtc-rept --cuda --run-id sketch-real vmtc_repr --dataset-loc1 data/real --dataset-loc2 data/sketch --ss-path moco_v2_800ep_pretrain.pth.tar
 ```
 
-### i2i
-Finally, we propose a image-to-image translation model which can incorporate the learned semantics. This model is inspired
-from StarGAN-v2 (https://github.com/clovaai/stargan-v2).
+### udt
+We propose to use the learned semantics in a domain translation framework. For MNIST-SVHN, we found that the
+architecture does not really matter. Hence, we propose a simple domain translation framework in `udt` which is a one 
+way (i.e. no recontruction), that does not have cycle-consistency or style losses and that follow a dcgan-like
+architecture. One can run `udt` as follows
 
-**Domain translation MNIST-SVHN**
+**Domain translation MNIST->SVHN**
 ```bash
-
+python src/main.py --run-id mnist-svhn --exp-name UDT --test-batch-size 50 --cuda udt --eval-model-path ./experiments/classifier/classifier_svhn-None/ --dataset1 mnist --dataset2 svhn --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
 ```
 
-**Domain translation Sketch->Real**
+**Domain translation SVHN->MNIST**
 ```bash
+python src/main.py --run-id svhn-mnist --exp-name UDT --test-batch-size 50 --cuda udt --eval-model-path ./experiments/classifier/classifier_mnist-None/ --dataset1 svhn --dataset2 mnist --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
+```
 
+### i2i
+For Sketch->Real, we found that using the architecture and the cycle + style losses yielded better results empirically. 
+Hence, we propose to incorporate semantics in a model which is inspired from StarGAN-v2 (https://github.com/clovaai/stargan-v2).
+
+**Domain translation Sketch-Real**
+```bash
+python src/main.py --train-batch-size 8 --evaluate 1000 --checkpoint 2000 --exp-name i2i --cuda --run-id sketch-real i2i --da-path ./experiments/vmtc_repr/vmtc-repr_ln-sketch-real-None/ --dataset cond_visda --dataset-loc1 ./data/sketch/ --dataset-loc2 ./data/real/ --ss-path moco_v2_800ep_pretrain.pth.tar
 ```
 
 ## Visualizing the results
@@ -104,3 +115,19 @@ We use tensorboard for saving the artefacts. It is possible to view the results 
 ```
 tensorboard --logdir .
 ```
+
+
+## Results
+
+**Sketch->Real**
+
+![](assets/sketch_real.png)
+
+
+**MNIST->SVHN** 
+
+![](assets/ours_m-s.png)
+
+**SVHN->MNIST**
+
+![](assets/ours_s-m.png)
