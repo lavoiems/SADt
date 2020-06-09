@@ -34,7 +34,7 @@ def execute(args):
     args.shape1 = shape1
     args.shape2 = shape2
 
-    model_definition = import_module('.'.join(('models', 'classifier', 'train')))
+    model_definition = import_module('.'.join(('models', 'vmtc_repr', 'train')))
     model_parameters = get_args(args.semantic_model_path)
     model_parameters['nc'] = nc
     models = model_definition.define_models(shape1, **model_parameters)
