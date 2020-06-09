@@ -18,7 +18,7 @@ def parse_args(parser):
     parser.add_argument('--z-dim', type=int, default=64)
     parser.add_argument('--radius', type=float, default=3.5)
     parser.add_argument('--gsxy', type=float, default=1)
-    parser.add_argument('--nc', type=float, default=1)
+    parser.add_argument('--nc', type=float, default=5)
 
 
 def execute(args):
