@@ -67,10 +67,9 @@ class AdaIN(nn.Module):
 
 
 class AdainResBlk(nn.Module):
-    def __init__(self, dim_in, dim_out, style_dim=64, w_hpf=0,
+    def __init__(self, dim_in, dim_out, style_dim=64,
                  actv=nn.LeakyReLU(0.2), upsample=False):
         super().__init__()
-        self.w_hpf = w_hpf
         self.actv = actv
         self.upsample = upsample
         self.learned_sc = dim_in != dim_out
@@ -104,25 +103,12 @@ class AdainResBlk(nn.Module):
 
     def forward(self, x, s):
         out = self._residual(x, s)
-        if self.w_hpf == 0:
-            out = (out + self._shortcut(x)) / math.sqrt(2)
+        out = (out + self._shortcut(x)) / math.sqrt(2)
         return out
 
 
-class HighPass(nn.Module):
-    def __init__(self, w_hpf, device):
-        super(HighPass, self).__init__()
-        self.filter = torch.tensor([[-1, -1, -1],
-                                    [-1, 8., -1],
-                                    [-1, -1, -1]]).to(device) / w_hpf
-
-    def forward(self, x):
-        filter = self.filter.unsqueeze(0).unsqueeze(1).repeat(x.size(1), 1, 1, 1)
-        return F.conv2d(x, filter, padding=1, groups=x.size(1))
-
-
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, w_hpf=1, bottleneck_size=64, **kwargs):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_size=64, **kwargs):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
@@ -136,15 +122,13 @@ class Generator(nn.Module):
 
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
-        if w_hpf > 0:
-            repeat_num += 1
         for _ in range(repeat_num):
             dim_out = min(dim_in*2, max_conv_dim)
             self.encode.append(
                 ResBlk(dim_in, dim_out, normalize=True, downsample=True))
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_in, style_dim,
-                               w_hpf=w_hpf, upsample=True))  # stack-like
+                               upsample=True))  # stack-like
             dim_in = dim_out
 
         # bottleneck blocks
@@ -152,12 +136,7 @@ class Generator(nn.Module):
             self.encode.append(
                 ResBlk(dim_out, dim_out, normalize=True))
             self.decode.insert(
-                0, AdainResBlk(dim_out, dim_out, style_dim, w_hpf=w_hpf))
-
-        if w_hpf > 0:
-            device = torch.device(
-                'cuda' if torch.cuda.is_available() else 'cpu')
-            self.hpf = HighPass(w_hpf, device)
+                0, AdainResBlk(dim_out, dim_out, style_dim))
 
     def forward(self, x, s, masks=None):
         x = self.from_rgb(x)
@@ -181,11 +160,11 @@ def one_hot_embedding(labels, num_classes):
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self, latent_dim=16, style_dim=64, num_domains=2, nc=5, **kwargs):
+    def __init__(self, z_dim=16, style_dim=64, num_domains=2, nc=5, **kwargs):
         super().__init__()
         self.nc = nc
         layers = []
-        layers += [nn.Linear(latent_dim+nc, 512)]
+        layers += [nn.Linear(z_dim+nc, 512)]
         layers += [nn.ReLU()]
         for _ in range(3):
             layers += [nn.Linear(512, 512)]
@@ -239,7 +218,7 @@ class StyleEncoder(nn.Module):
             unshared = []
             for _ in range(n_unshared_layers):
                 unshared += [nn.Linear(dim_out, dim_out),
-                                  nn.LeakyReLU(0.2)]
+                             nn.LeakyReLU(0.2)]
             unshared += [nn.Linear(dim_out, style_dim)]
             self.unshared += [nn.Sequential(*unshared)]
 

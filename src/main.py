@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--visdom', action='store_true')
     parser.add_argument('--reload', action='store_true')
     parser.add_argument('--checkpoint', type=int, default=1000)
-    parser.add_argument('--iterations', type=int, default=50001)
+    parser.add_argument('--iterations', type=int, default=100001)
     parser.add_argument('--evaluate', type=int, default=100)
     parser.add_argument('--train-batch-size', type=int, default=64)
     parser.add_argument('--test-batch-size', type=int, default=512)
