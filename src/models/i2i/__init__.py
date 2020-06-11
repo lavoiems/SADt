@@ -10,16 +10,19 @@ from common.initialize import load_last_model
 def parse_args(parser):
     parser.add_argument('--da-path', type=str, required=True)
     parser.add_argument('--ss-path', type=str, required=True)
-    parser.add_argument('--dataset-loc1', type=str, default='./data')
-    parser.add_argument('--dataset-loc2', type=str, default='./data')
+    parser.add_argument('--dataset-loc1', type=str, default='./data/sketch')
+    parser.add_argument('--dataset-loc2', type=str, default='./data/real')
     parser.add_argument('--dataset', type=str, default='cond_visda')
-    parser.add_argument('--h-dim', type=int, default=64)
     parser.add_argument('--d-updates', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--beta1', type=float, default=0.5)
-    parser.add_argument('--beta2', type=float, default=0.999)
+    parser.add_argument('--f_lr', type=float, default=1e-6)
+    parser.add_argument('--beta1', type=float, default=0)
+    parser.add_argument('--beta2', type=float, default=0.99)
     parser.add_argument('--z-dim', type=int, default=16)
-    parser.add_argument('--radius', type=float, default=3.5)
+    parser.add_argument('--style-dim', type=int, default=64)
+    parser.add_argument('--max-conv-dim', type=int, default=512)
+    parser.add_argument('--bottleneck-size', type=int, default=64)
+    parser.add_argument('--n-unshared-layers', type=int, default=0)
     parser.add_argument('--nc', type=float, default=5)
     parser.add_argument('--lambda_gp', type=float, default=1)
     parser.add_argument('--lambda_dclass', type=float, default=1)
@@ -67,6 +70,7 @@ def execute(args):
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
                                                   args.device)
+    args.img_size = shape[0]
     args.loaders = (train_loader, test_loader)
     args.shape = shape
 
