@@ -106,7 +106,7 @@ def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     return train_loader, test_loader, test_loader, shape, n_classes
 
 
-def visda(root, train_batch_size, test_batch_size, use_normalize=False, **kwargs):
+def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=False, **kwargs):
     train_transform = [
         transforms.Resize((256, 256), interpolation=1),
         transforms.RandomHorizontalFlip(),
@@ -128,8 +128,8 @@ def visda(root, train_batch_size, test_batch_size, use_normalize=False, **kwargs
     test = datasets.ImageFolder(os.path.join(root, 'test'), transform=test_transform)
 
     train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, pin_memory=False,
-                                               shuffle=True, num_workers=10, drop_last=True)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
+                                               shuffle=shuffle, num_workers=10, drop_last=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=shuffle,
                                               num_workers=10, drop_last=False)
 
     shape = train_loader.dataset[0][0].shape

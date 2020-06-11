@@ -129,8 +129,8 @@ def evaluate_cluster_accuracy(visualiser, i, zs, labels, class_map, classifier, 
 
 def train(args):
     parameters = vars(args)
-    train_loader1, valid_loader1, test_loader1 = args.loaders1
-    train_loader2, valid_loader2, test_loader2 = args.loaders2
+    train_loader1, test_loader1 = args.loaders1
+    train_loader2, test_loader2 = args.loaders2
 
     models = define_models(**parameters)
     initialize(models, args.reload, args.save_path, args.model_path)
@@ -138,8 +138,8 @@ def train(args):
     ssx = args.ssx.to(args.device)
     ssx.eval()
 
-    zxs, labelsx = get_initial_zx(test_loader1, ssx, args.device)
-    zys, labelsy = get_initial_zx(test_loader2, ssx, args.device)
+    zxs, labelsx = get_initial_zx(train_loader1, ssx, args.device)
+    zys, labelsy = get_initial_zx(train_loader2, ssx, args.device)
 
     sc = SpectralClustering(args.nc, affinity='sigmoid', gamma=1.7)
     clusters = sc.fit_predict(zxs.cpu().numpy())
@@ -216,3 +216,4 @@ def train(args):
             args.visualiser.plot(d_loss.cpu().detach().numpy(), title='Discriminator loss', step=i)
             t0 = time.time()
             save_models(models, i, args.model_path, args.evaluate)
+            save_models(optims, i, args.model_path, args.evaluate)
