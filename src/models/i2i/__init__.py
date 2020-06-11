@@ -70,7 +70,7 @@ def execute(args):
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
                                                   args.device)
-    args.img_size = shape[0]
+    args.img_size = shape[1]
     args.loaders = (train_loader, test_loader)
     args.shape = shape
 
