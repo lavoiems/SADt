@@ -159,8 +159,8 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
     test = CondDataset(test1, test2, semantics, nc, device)
 
     train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
-                                   num_workers=10, drop_last=True, pin_memory=True)
-    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=False,
+                                   num_workers=10, drop_last=True, pin_memory=False)
+    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
                                   num_workers=10, drop_last=False)
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, nc

@@ -142,18 +142,21 @@ def define_models(**parameters):
 @torch.no_grad()
 def evaluate(visualiser, data, y, domain, nz, mapping, generator, i, device):
     n_gen = 5
+    n_data = data.shape[0]
     z = torch.cat(data.shape[0] * [torch.randn(1, n_gen, nz)]).to(device)
-    z.transpose(0, 1).reshape(data.shape[0]*n_gen, nz)
+    z = z.transpose(0, 1).reshape(data.shape[0]*n_gen, nz)
 
     data = torch.cat(n_gen * [data])
     y = torch.cat(n_gen * [y])
-    d = torch.cat(n_gen * [0==domain])
+    d = torch.cat(n_gen * [0==domain]).long()
     s_trg = mapping(z, y, d)
     x_fake = generator(data, s_trg)
 
     concat = [data] + [x_fake]
     concat = torch.cat(concat)
-    results = torch.cat([concat[:data.shape[0]], concat[data.shape[0]:]])
+    results = torch.cat([concat[:n_data], concat[data.shape[0]:]])
+    results = (results + 1) / 2
+    results.clamp_(0, 1)
     visualiser.image(results.cpu().numpy(), title=f'Generated', step=i)
 
 
@@ -257,7 +260,7 @@ def train(args):
             data = batch[0].to(args.device)
             label = batch[1].to(args.device)
             dom = batch[2].to(args.device)
-            evaluate(args.visualiser, data, label, dom, args.nz, mapping_network_ema, generator_ema, i, args.device)
+            evaluate(args.visualiser, data, label, dom, args.z_dim, mapping_network_ema, generator_ema, i, args.device)
 
             print(f'Discriminator mapping loss: {dmloss}, '
                   f'discriminator style loss: {dsloss}, '
