@@ -28,11 +28,11 @@ presented results on the Sketch->Real dataset which are a subset of the DomainNe
 (https://arxiv.org/abs/1812.01754).
 The sketch dataset can be downloaded as follow:
 ```bash
-./fetch_data.sh sketch
+./download_data.sh sketch
 ```
 Similarly, the real dataset can be downloaded as follows:
 ```bash
-./fetch_data.sh real
+./download_data.sh real
 ```
 
 ## Models
