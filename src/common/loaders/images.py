@@ -172,32 +172,32 @@ class CondDataset(data.Dataset):
         print('Infering semantics for dataset1')
         for sample, _ in dataset1:
             sample = sample.to(device)
-            sample.unsqueeze_(0)
-            sample = (sample+1)*0.5
+            sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
         print('Infering semantics for dataset2')
         for sample, _ in dataset2:
             sample = sample.to(device)
-            label = semantics((sample.unsqueeze(0) + 1) * 0.5).argmax(1)
+            sample = (sample.unsqueeze(0)+1)*0.5
+            label = semantics(sample).argmax(1)
             labels.append(label)
 
         self.labels = torch.LongTensor(labels)
         self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]
-        self.len_domain1 = len(dataset1)
+        self.domains = [0]*len(dataset1) + [1]*len(dataset2)
         self.dataset = data.ConcatDataset((dataset1, dataset2))
 
     def __getitem__(self, idx):
         sample, _ = self.dataset[idx]
         target = self.labels[idx]
-        domain = int(idx > self.len_domain1)
+        domain = self.domains[idx]
         idxs = self.labels_idxs[target]
         idx2 = idxs[random.randint(0, len(idxs)-1)]
 
         sample2, _ = self.dataset[idx2]
         target2 = self.labels[idx2]
         assert(target == target2)
-        domain2 = int(idx2 > self.len_domain1)
+        domain2 = self.domains[idx2]
         return sample, target, domain, sample2, domain2
 
     def __len__(self):

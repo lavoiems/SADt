@@ -13,7 +13,6 @@ def parse_args(parser):
     parser.add_argument('--dataset-loc1', type=str, default='./data/sketch')
     parser.add_argument('--dataset-loc2', type=str, default='./data/real')
     parser.add_argument('--dataset', type=str, default='cond_visda')
-    parser.add_argument('--d-updates', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--f_lr', type=float, default=1e-6)
     parser.add_argument('--beta1', type=float, default=0)

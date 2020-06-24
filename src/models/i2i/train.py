@@ -53,8 +53,7 @@ def compute_disc_loss(target, generated, domx, domy, discriminator):
     return lt, lgp, lg
 
 
-def gen_mapping_loss(datax, label, domx, domy, z_dim, mapping_network, style_encoder, generator, discriminator, device):
-    z = torch.randn(datax.shape[0], z_dim, device=device)
+def gen_mapping_loss(datax, label, domx, domy, z, mapping_network, style_encoder, generator, discriminator, device):
     s = mapping_network(z, label, domy)
     gen = generator(datax, s)
 
@@ -98,8 +97,7 @@ def gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, di
     return ladv, lcl, lsty, lcyc
 
 
-def disc_mapping_loss(datax, label, domx, domy, z_dim, mapping_network, generator, discriminator, device):
-    z = torch.randn(datax.shape[0], z_dim, device=device)
+def disc_mapping_loss(datax, label, domx, domy, z, mapping_network, generator, discriminator, device):
     s = mapping_network(z, label, domy)
     gen = generator(datax, s).detach()
     lt, lgp, lg = compute_disc_loss(datax, gen, domx, domy, discriminator)
@@ -111,7 +109,7 @@ def disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, d
     s = style_encoder(datay, label, domy)
     gen = generator(datax, s).detach()
     lt, lgp, lg = compute_disc_loss(datax, gen, domx, domy, discriminator)
-    lcl = ce_loss(datay, label, domy, discriminator.classify)
+    lcl = ce_loss(datax, label, domx, discriminator.classify)
     return lt, lgp, lg, lcl
 
 
@@ -202,28 +200,32 @@ def train(args):
         style_encoder.train()
         discriminator.train()
 
-        for _ in range(args.d_updates):
-            batch, iterator = sample(iterator, train_loader)
-            datax = batch[0].to(args.device)
-            label = batch[1].to(args.device)
-            domx = batch[2].to(args.device)
-            datay = batch[3].to(args.device)
-            domy = batch[4].to(args.device)
+        batch, iterator = sample(iterator, train_loader)
+        datax = batch[0].to(args.device)
+        label = batch[1].to(args.device)
+        domx = batch[2].to(args.device)
+        datay = batch[3].to(args.device)
+        domy = batch[4].to(args.device)
+        z1 = torch.randn(args.train_batch_size, args.z_dim, device=args.device)
 
-            lt, lgp, lg, lcl = disc_mapping_loss(datax, label, domx, domy, args.z_dim, mapping_network, generator,
-                                                 discriminator, args.device)
-            dmloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
-            optim_discriminator.zero_grad()
-            dmloss.backward()
-            optim_discriminator.step()
+        ## Train the discriminator
+        lt, lgp, lg, lcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
+                                             discriminator, args.device)
+        dmloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
+        optim_discriminator.zero_grad()
+        dmloss.backward()
+        optim_discriminator.step()
 
-            lt, lgp, lg, lcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
-            dsloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
-            optim_discriminator.zero_grad()
-            dsloss.backward()
-            optim_discriminator.step()
+        lt, lgp, lg, lcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
+        dsloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
+        optim_discriminator.zero_grad()
+        dsloss.backward()
+        optim_discriminator.step()
 
-        ladv, lcl, lsty, lcyc = gen_mapping_loss(datax, label, domx, domy, args.z_dim, mapping_network, style_encoder, generator, discriminator, args.device)
+
+        ## Train the generator
+        ladv, lcl, lsty, lcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
+                                                 generator, discriminator, args.device)
         gmloss = ladv + args.lambda_lcl*lcl + args.lambda_lsty*lsty + args.lambda_lcyc*lcyc
         optim_generator.zero_grad()
         optim_mapping_network.zero_grad()

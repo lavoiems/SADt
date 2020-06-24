@@ -1,5 +1,5 @@
 #####
-# Code adapted from the orginal repos of StyleGAN-v2: https://github.com/clovaai/stargan-v2
+# Model architecture adapted from the orginal repos of StarGAN-v2: https://github.com/clovaai/stargan-v2
 #####
 import math
 
