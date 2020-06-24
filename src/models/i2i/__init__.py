@@ -15,6 +15,7 @@ def parse_args(parser):
     parser.add_argument('--dataset', type=str, default='cond_visda')
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--f_lr', type=float, default=1e-6)
+    parser.add_argument('--wd', type=float, default=1e-4)
     parser.add_argument('--beta1', type=float, default=0)
     parser.add_argument('--beta2', type=float, default=0.99)
     parser.add_argument('--z-dim', type=int, default=16)

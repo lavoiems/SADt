@@ -179,10 +179,14 @@ def train(args):
     print(style_encoder)
     print(discriminator)
 
-    optim_generator = optim.Adam(generator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    optim_mapping_network = optim.Adam(mapping_network.parameters(), lr=args.f_lr, betas=(args.beta1, args.beta2))
-    optim_style_encoder = optim.Adam(style_encoder.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    optim_discriminator = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    optim_generator = optim.Adam(generator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
+                                 weight_decay=args.wd)
+    optim_mapping_network = optim.Adam(mapping_network.parameters(), lr=args.f_lr, betas=(args.beta1, args.beta2),
+                                       weight_decay=args.wd)
+    optim_style_encoder = optim.Adam(style_encoder.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
+                                     weight_decay=args.wd)
+    optim_discriminator = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
+                                     weight_decay=args.wd)
     optims = {
         'optim_generator': optim_generator,
         'optim_mapping_network': optim_mapping_network,
@@ -209,24 +213,24 @@ def train(args):
         z1 = torch.randn(args.train_batch_size, args.z_dim, device=args.device)
 
         ## Train the discriminator
-        lt, lgp, lg, lcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
+        dmlt, dmlgp, dmlg, dmlcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
                                              discriminator, args.device)
-        dmloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
+        dmloss = dmlt + dmlg + args.lambda_gp*dmlgp + args.lambda_dclass*dmlcl
         optim_discriminator.zero_grad()
         dmloss.backward()
         optim_discriminator.step()
 
-        lt, lgp, lg, lcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
-        dsloss = lt + lg + args.lambda_gp*lgp + args.lambda_dclass*lcl
+        dslt, dslgp, dslg, dslcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
+        dsloss = dslt + dslg + args.lambda_gp*dslgp + args.lambda_dclass*dslcl
         optim_discriminator.zero_grad()
         dsloss.backward()
         optim_discriminator.step()
 
 
         ## Train the generator
-        ladv, lcl, lsty, lcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
+        gmladv, gmlcl, gmlsty, gmlcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
                                                  generator, discriminator, args.device)
-        gmloss = ladv + args.lambda_lcl*lcl + args.lambda_lsty*lsty + args.lambda_lcyc*lcyc
+        gmloss = gmladv + args.lambda_lcl*gmlcl + args.lambda_lsty*gmlsty + args.lambda_lcyc*gmlcyc
         optim_generator.zero_grad()
         optim_mapping_network.zero_grad()
         optim_style_encoder.zero_grad()
@@ -235,8 +239,8 @@ def train(args):
         optim_mapping_network.step()
         optim_generator.step()
 
-        ladv, lcl, lsty, lcyc = gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
-        gsloss = ladv + args.lambda_lcl*lcl + args.lambda_lsty*lsty + args.lambda_lcyc*lcyc
+        gsladv, gslcl, gslsty, gslcyc = gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
+        gsloss = gsladv + args.lambda_lcl*gslcl + args.lambda_lsty*gslsty + args.lambda_lcyc*gslcyc
         optim_generator.zero_grad()
         gsloss.backward()
         optim_generator.step()
@@ -257,10 +261,10 @@ def train(args):
             dom = batch[2].to(args.device)
             evaluate(args.visualiser, data, label, dom, args.z_dim, mapping_network_ema, generator_ema, i, args.device)
 
-            print(f'Discriminator mapping loss: {dmloss}, '
-                  f'discriminator style loss: {dsloss}, '
-                  f'generator mapping loss: {gmloss}, '
-                  f'generator style loss: {gsloss})')
+            print(f'Discriminator mapping loss: {dmloss}: (real: {dmlt}, gp: {dmlgp}, fake: {dmlg}, class: {dmlcl})')
+            print(f'discriminator style loss: {dsloss}: (real: {dslt}, gp: {dslgp}, fake: {dslg}, class: {dslcl})')
+            print(f'generator mapping loss: {gmloss}: (adv: {gmladv}, class: {gmlcl}, style: {gmlsty}, cycle: {gmlcyc})')
+            print(f'generator style loss: {gsloss}): (adv: {gsladv}, class: {gslcl}, style: {gslsty}, cycle: {gslcyc})')
             save_models(models, i, args.model_path, args.checkpoint)
             save_models(optims, i, args.model_path, args.checkpoint)
             t0 = time.time()
