@@ -121,10 +121,10 @@ class Generator(nn.Module):
             nn.Conv2d(dim_in, 3, 1, 1, 0))
 
         self.style = [nn.Sequential(nn.Linear(style_dim+1, 512),
-                                        nn.ReLU(),
-                                        nn.Linear(512, 512),
-                                        nn.ReLU(),
-                                        nn.Linear(512, style_dim))]
+                                    nn.ReLU(),
+                                    nn.Linear(512, 512),
+                                    nn.ReLU(),
+                                    nn.Linear(512, style_dim))]
 
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
