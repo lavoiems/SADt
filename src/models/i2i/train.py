@@ -1,12 +1,24 @@
 import time
 import copy
 import torch
+from torch import nn
 import torch.nn.functional as F
 from torch import optim
 
 from common.util import sample, save_models
 from common.initialize import initialize, infer_iteration
 from . import model
+
+
+def he_init(module):
+    if isinstance(module, nn.Conv2d):
+        nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0)
+    if isinstance(module, nn.Linear):
+        nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0)
 
 
 def ce_loss(data, label, dom, classifier):
@@ -170,6 +182,11 @@ def train(args):
     style_encoder = models['style_encoder'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
 
+    generator.apply(he_init)
+    mapping_network.apply(he_init)
+    style_encoder.apply(he_init)
+    discriminator.apply(he_init)
+
     generator_ema = models['generator_ema'].to(args.device)
     mapping_network_ema = models['mapping_network_ema'].to(args.device)
     style_encoder_ema = models['style_encoder_ema'].to(args.device)
@@ -210,7 +227,8 @@ def train(args):
         domx = batch[2].to(args.device)
         datay = batch[3].to(args.device)
         domy = batch[4].to(args.device)
-        z1 = torch.randn(args.train_batch_size, args.z_dim, device=args.device)
+        z1 = torch.randn(args.train_batch_size, args.z_dim)
+        z1 = z1.to(args.device)
 
         ## Train the discriminator
         dmlt, dmlgp, dmlg, dmlcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
