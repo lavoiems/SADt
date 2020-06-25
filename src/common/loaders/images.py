@@ -175,7 +175,6 @@ class CondDataset(data.Dataset):
         print('Infering semantics for dataset1', end='\t')
         for sample, gt in dataset1:
             sample = sample.to(device)
-            #label = gt
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
@@ -187,7 +186,6 @@ class CondDataset(data.Dataset):
         print('Infering semantics for dataset2', end='\t')
         for sample, gt in dataset2:
             sample = sample.to(device)
-            #label = gt
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)

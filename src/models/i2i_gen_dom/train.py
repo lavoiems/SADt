@@ -26,14 +26,6 @@ def ce_loss(data, label, dom, classifier):
     return F.cross_entropy(pred, label)
 
 
-def cycle_loss(data, nz, generator1, generator2, device):
-    z = torch.randn(data.shape[0], nz, device=device)
-    gen = generator1(data, z)
-    z = torch.randn(data.shape[0], nz, device=device)
-    cycle = generator2(gen, z)
-    return F.l1_loss(data, cycle)
-
-
 def r1_reg(d_out, x_in):
     # zero-centered gradient penalty for real images
     batch_size = x_in.size(0)
@@ -67,7 +59,7 @@ def compute_disc_loss(target, generated, domx, domy, discriminator):
 
 def gen_mapping_loss(datax, label, domx, domy, z, mapping_network, style_encoder, generator, discriminator, device):
     s = mapping_network(z, label, domy)
-    gen = generator(datax, s)
+    gen = generator(datax, s, domy)
 
     # loss adv
     dg = discriminator(gen, domy)
@@ -82,14 +74,14 @@ def gen_mapping_loss(datax, label, domx, domy, z, mapping_network, style_encoder
 
     # loss cycle
     s_cyc = style_encoder(datax, label, domx)
-    x_cyc = generator(gen, s_cyc)
+    x_cyc = generator(gen, s_cyc, domx)
     lcyc = torch.mean(torch.abs(x_cyc - datax))
     return ladv, lcl, lsty, lcyc
 
 
 def gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator):
     s = style_encoder(datay, label, domy)
-    gen = generator(datax, s)
+    gen = generator(datax, s, domy)
 
     # loss adv
     dg = discriminator(gen, domy)
@@ -104,14 +96,14 @@ def gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, di
 
     # loss cycle
     s_cyc = style_encoder(datax, label, domx)
-    x_cyc = generator(gen, s_cyc)
+    x_cyc = generator(gen, s_cyc, domx)
     lcyc = torch.mean(torch.abs(x_cyc - datax))
     return ladv, lcl, lsty, lcyc
 
 
 def disc_mapping_loss(datax, label, domx, domy, z, mapping_network, generator, discriminator, device):
     s = mapping_network(z, label, domy)
-    gen = generator(datax, s).detach()
+    gen = generator(datax, s, domy).detach()
     lt, lgp, lg = compute_disc_loss(datax, gen, domx, domy, discriminator)
     lcl = ce_loss(datax, label, domx, discriminator.classify)
     return lt, lgp, lg, lcl
@@ -119,7 +111,7 @@ def disc_mapping_loss(datax, label, domx, domy, z, mapping_network, generator, d
 
 def disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator):
     s = style_encoder(datay, label, domy)
-    gen = generator(datax, s).detach()
+    gen = generator(datax, s, domy).detach()
     lt, lgp, lg = compute_disc_loss(datax, gen, domx, domy, discriminator)
     lcl = ce_loss(datax, label, domx, discriminator.classify)
     return lt, lgp, lg, lcl
@@ -160,7 +152,7 @@ def evaluate(visualiser, data, y, domain, nz, mapping, generator, i, device):
     y = torch.cat(n_gen * [y])
     d = torch.cat(n_gen * [0==domain]).long()
     s_trg = mapping(z, y, d)
-    x_fake = generator(data, s_trg)
+    x_fake = generator(data, s_trg, d)
 
     concat = [data] + [x_fake]
     concat = torch.cat(concat)

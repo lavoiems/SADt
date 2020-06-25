@@ -9,6 +9,7 @@ from models import vmt_cluster
 from models import udt
 from models import vmtc_repr
 from models import i2i
+from models import i2i_gen_dom
 
 _models_ = {
     'classifier': classifier,
@@ -17,6 +18,7 @@ _models_ = {
     'udt': udt,
     'vmtc_repr': vmtc_repr,
     'i2i': i2i,
+    'i2i_gen_dom': i2i_gen_dom,
 }
 
 
