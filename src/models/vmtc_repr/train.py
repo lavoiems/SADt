@@ -104,6 +104,8 @@ def evaluate_cluster(visualiser, i, nc, zx, labels, classifier, id, device):
             l = one_hot_embedding(label, nc).sum(0)
             correct += l.max()
             cluster_map.append(l.argmax())
+        else:
+            cluster_map.append(0)
         total += len(label)
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
@@ -124,6 +126,7 @@ def evaluate_cluster_accuracy(visualiser, i, zs, labels, class_map, classifier, 
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
     visualiser.plot(accuracy, title=f'Clustering accuracy {id}', step=i)
+    print(f'Accuracy {id}: {accuracy}')
     return accuracy
 
 
