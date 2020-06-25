@@ -179,6 +179,8 @@ def train(args):
     print(style_encoder)
     print(discriminator)
 
+    print(generator.training)
+
     optim_generator = optim.Adam(generator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
                                  weight_decay=args.wd)
     optim_mapping_network = optim.Adam(mapping_network.parameters(), lr=args.f_lr, betas=(args.beta1, args.beta2),
@@ -199,10 +201,10 @@ def train(args):
     iteration = infer_iteration(list(models.keys())[0], args.reload, args.model_path, args.save_path)
     t0 = time.time()
     for i in range(iteration, args.iterations):
-        generator.train()
-        mapping_network.train()
-        style_encoder.train()
-        discriminator.train()
+        #generator.train()
+        #mapping_network.train()
+        #style_encoder.train()
+        #discriminator.train()
 
         batch, iterator = sample(iterator, train_loader)
         datax = batch[0].to(args.device)
@@ -251,9 +253,9 @@ def train(args):
 
         if i % args.evaluate == 0:
             print('Iter: %s' % i, time.time() - t0, end='\t')
-            generator_ema.eval()
-            mapping_network_ema.eval()
-            style_encoder_ema.eval()
+            #generator_ema.eval()
+            #mapping_network_ema.eval()
+            #style_encoder_ema.eval()
 
             batch, test_iterator = sample(test_iterator, test_loader)
             data = batch[0].to(args.device)
