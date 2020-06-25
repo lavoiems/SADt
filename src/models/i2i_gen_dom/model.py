@@ -120,7 +120,7 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
 
-        self.style += [nn.Sequential(nn.Linear(style_dim+1, 512),
+        self.style = [nn.Sequential(nn.Linear(style_dim+1, 512),
                                         nn.ReLU(),
                                         nn.Linear(512, 512),
                                         nn.ReLU(),
