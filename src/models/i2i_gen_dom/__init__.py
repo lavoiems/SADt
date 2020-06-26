@@ -9,7 +9,8 @@ from common.initialize import load_last_model
 
 def parse_args(parser):
     parser.add_argument('--da-path', type=str, required=True)
-    parser.add_argument('--ss-path', type=str, required=True)
+    parser.add_argument('--da-model', type=str, default='vmtc_repr')
+    parser.add_argument('--ss-path', type=str, default=None)
     parser.add_argument('--dataset-loc1', type=str, default='./data/sketch')
     parser.add_argument('--dataset-loc2', type=str, default='./data/real')
     parser.add_argument('--dataset', type=str, default='cond_visda')
@@ -41,22 +42,7 @@ def semantics_fn(ss, da):
 def execute(args):
     dataset = getattr(images, args.dataset)
 
-    ssx = torchvision.models.resnet50().to(args.device)
-    ssx.fc = torch.nn.Identity()
-    state_dict = torch.load(args.ss_path, map_location='cpu')['state_dict']
-    for k in list(state_dict.keys()):
-        # retain only encoder_q up to before the embedding layer
-        if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
-            # remove prefix
-            state_dict[k[len("module.encoder_q."):]] = state_dict[k]
-        # delete renamed or unused k
-        del state_dict[k]
-    err = ssx.load_state_dict(state_dict, strict=False)
-    print(err)
-    ssx = ssx.to(args.device)
-    ssx.eval()
-
-    model_definition = import_module('.'.join(('models', 'vmtc_repr', 'train')))
+    model_definition = import_module('.'.join(('models', args.da_model, 'train')))
     model_parameters = get_args(args.da_path)
     model_parameters['nc'] = args.nc
     models = model_definition.define_models(**model_parameters)
@@ -65,7 +51,24 @@ def execute(args):
     da = da.to(args.device)
     da.eval()
 
-    semantics = semantics_fn(ssx, da)
+    if args.ss_path:
+        ssx = torchvision.models.resnet50().to(args.device)
+        ssx.fc = torch.nn.Identity()
+        state_dict = torch.load(args.ss_path, map_location='cpu')['state_dict']
+        for k in list(state_dict.keys()):
+            # retain only encoder_q up to before the embedding layer
+            if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+                # remove prefix
+                state_dict[k[len("module.encoder_q."):]] = state_dict[k]
+            # delete renamed or unused k
+            del state_dict[k]
+        err = ssx.load_state_dict(state_dict, strict=False)
+        print(err)
+        ssx = ssx.to(args.device)
+        ssx.eval()
+        semantics = semantics_fn(ssx, da)
+    else:
+        semantics = da
 
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
