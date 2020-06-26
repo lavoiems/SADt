@@ -120,11 +120,11 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
 
-        self.style = [nn.Sequential(nn.Linear(style_dim+1, 512),
-                                    nn.ReLU(),
-                                    nn.Linear(512, 512),
-                                    nn.ReLU(),
-                                    nn.Linear(512, style_dim))]
+        self.style = nn.Sequential(nn.Linear(style_dim+1, 512),
+                                   nn.ReLU(),
+                                   nn.Linear(512, 512),
+                                   nn.ReLU(),
+                                   nn.Linear(512, style_dim))
 
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
@@ -146,7 +146,7 @@ class Generator(nn.Module):
 
     def forward(self, x, s, d, masks=None):
         x = self.from_rgb(x)
-        style = torch.cat((s, d), 1)
+        style = torch.cat((s, d.unsqueeze(1).float()), 1)
         style = self.style(style)
         cache = {}
         for block in self.encode:
