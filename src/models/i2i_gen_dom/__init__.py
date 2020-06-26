@@ -46,6 +46,7 @@ def execute(args):
     model_definition = import_module('.'.join(('models', args.da_model, 'train')))
     model_parameters = get_args(args.da_path)
     model_parameters['nc'] = args.nc
+    model_parameters['shape1'] = args.img_dim
     models = model_definition.define_models(**model_parameters)
     da = models['classifier']
     da = load_last_model(da, 'classifier', args.da_path)
