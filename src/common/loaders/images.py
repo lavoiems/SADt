@@ -106,6 +106,30 @@ def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     return train_loader, test_loader, test_loader, shape, n_classes
 
 
+def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    transform = transforms.Compose([
+        transforms.Resize(32, interpolation=0),
+        transforms.ToTensor(),
+        triple_channel,
+        normalize,
+    ])
+
+    train1 = datasets.MNIST(root1, train=True, download=True, transform=transform)
+    train2 = datasets.SVHN(root2, split='train', download=True, transform=transform)
+    train = CondDataset(train1, train2, semantics, nc, device)
+    test1 = datasets.MNIST(root1, train=False, download=True, transform=transform)
+    test2 = datasets.SVHN(root2, split='test', download=True, transform=transform)
+    test = CondDataset(test1, test2, semantics, nc, device)
+
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
+                                   num_workers=10, drop_last=True, pin_memory=False)
+    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
+                                  num_workers=10, drop_last=False)
+    shape = train_loader.dataset[0][0].shape
+    return train_loader, test_loader, shape, nc
+
+
 def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=False, **kwargs):
     train_transform = [
         transforms.Resize((256, 256), interpolation=1),
