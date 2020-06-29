@@ -174,10 +174,11 @@ def train(args):
     style_encoder = models['style_encoder'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
 
-    generator.apply(he_init)
-    mapping_network.apply(he_init)
-    style_encoder.apply(he_init)
-    discriminator.apply(he_init)
+    if not args.reload:
+        generator.apply(he_init)
+        mapping_network.apply(he_init)
+        style_encoder.apply(he_init)
+        discriminator.apply(he_init)
 
     generator_ema = models['generator_ema'].to(args.device)
     mapping_network_ema = models['mapping_network_ema'].to(args.device)
@@ -224,7 +225,7 @@ def train(args):
 
         ## Train the discriminator
         dmlt, dmlgp, dmlg, dmlcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
-                                             discriminator, args.device)
+                                                     discriminator, args.device)
         dmloss = dmlt + dmlg + args.lambda_gp*dmlgp + args.lambda_dclass*dmlcl
         optim_discriminator.zero_grad()
         dmloss.backward()
