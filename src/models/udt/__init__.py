@@ -6,20 +6,19 @@ from common.initialize import load_last_model
 
 
 def parse_args(parser):
-    parser.add_argument('--semantic-model-path', type=str, required=True)
-    parser.add_argument('--eval-model-path', type=str, required=True)
-    parser.add_argument('--dataset-loc1', type=str, default='./data')
-    parser.add_argument('--dataset-loc2', type=str, default='./data')
-    parser.add_argument('--dataset1', type=str, default='mnist')
-    parser.add_argument('--dataset2', type=str, default='svhn')
-    parser.add_argument('--h-dim', type=int, default=64)
-    parser.add_argument('--d-updates', type=int, default=5)
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--beta1', type=float, default=0.5)
-    parser.add_argument('--beta2', type=float, default=0.999)
-    parser.add_argument('--z-dim', type=int, default=64)
-    parser.add_argument('--radius', type=float, default=3.5)
-    parser.add_argument('--gsxy', type=float, default=0)
+    parser.add_argument('--semantic-model-path', type=str, required=True, help='Location of the pre-trained semantic model (vmc_cluster)')
+    parser.add_argument('--eval-model-path', type=str, required=True, help='Location of the pre-trained evaluation model (classifier)')
+    parser.add_argument('--dataset-loc1', type=str, default='./data', help='Location of the dataset')
+    parser.add_argument('--dataset-loc2', type=str, default='./data', help='Location of the dataset')
+    parser.add_argument('--dataset1', type=str, default='mnist', choice=['mnist', 'svhn'], help='Dataset 1 to use')
+    parser.add_argument('--dataset2', type=str, default='svhn', choice=['mnist', 'svhn'], help='Dataset 2 to use')
+    parser.add_argument('--h-dim', type=int, default=64, help='Number of base hidden dimension in the DCGAN network')
+    parser.add_argument('--d-updates', type=int, default=5, help='Number of critic updates per generator update')
+    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('--beta1', type=float, default=0.5, help='Adam parameter')
+    parser.add_argument('--beta2', type=float, default=0.999, help='Adam paramter')
+    parser.add_argument('--z-dim', type=int, default=64, help='Prior distribution dimension')
+    parser.add_argument('--gsxy', type=float, default=1, help='Lambda of semantic loss')
 
 
 def execute(args):

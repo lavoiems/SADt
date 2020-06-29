@@ -5,22 +5,22 @@ import torch
 
 
 def parse_args(parser):
-    parser.add_argument('--dataset-loc1', type=str, default='./data')
-    parser.add_argument('--dataset-loc2', type=str, default='./data')
-    parser.add_argument('--dataset1', type=str, default='visda')
-    parser.add_argument('--dataset2', type=str, default='visda')
-    parser.add_argument('--h-dim', type=int, default=256)
-    parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--beta1', type=float, default=0.5)
-    parser.add_argument('--beta2', type=float, default=0.999)
-    parser.add_argument('--z-dim', type=int, default=2048)
-    parser.add_argument('--radius', type=float, default=3.5)
-    parser.add_argument('--cw', type=float, default=1)
-    parser.add_argument('--tcw', type=float, default=0.1)
-    parser.add_argument('--dw', type=float, default=0.01)
-    parser.add_argument('--smw', type=float, default=1)
-    parser.add_argument('--tmw', type=float, default=0.1)
-    parser.add_argument('--ss-path', type=str, default='')
+    parser.add_argument('--dataset-loc1', type=str, default='./data', help='Location dataset 1')
+    parser.add_argument('--dataset-loc2', type=str, default='./data', help='location dataset 2')
+    parser.add_argument('--dataset1', type=str, default='mnist', choice=['mnist', 'svhn'], help='Dataset 1')
+    parser.add_argument('--dataset2', type=str, default='svhn', choice=['mnist', 'svhn'], help='Dataset2')
+    parser.add_argument('--h-dim', type=int, default=256, help='Number of hidden Dimensions')
+    parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
+    parser.add_argument('--beta1', type=float, default=0.5, help='Adam parameter')
+    parser.add_argument('--beta2', type=float, default=0.999, help='Adam parameter')
+
+    parser.add_argument('--z-dim', type=int, default=2048, help='Bottleneck size')
+    parser.add_argument('--cw', type=float, default=1, help='Lambda source classifier')
+    parser.add_argument('--tcw', type=float, default=0.1, help='Lambda target cluster')
+    parser.add_argument('--dw', type=float, default=0.01, help='Lambda Adversrial')
+    parser.add_argument('--smw', type=float, default=1, help='Lambda source manifold')
+    parser.add_argument('--tmw', type=float, default=0.1, help='Lambda target manifold')
+    parser.add_argument('--ss-path', type=str, required=True, help='Path of pre-trained self-supervised model (MoCO v2)')
 
 
 def execute(args):

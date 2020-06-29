@@ -5,16 +5,15 @@ from common.loaders import images
 
 
 def parse_args(parser):
-    parser.add_argument('--dataset', type=str, default='mnist')
-    parser.add_argument('--dataset-loc', type=str, default='.')
-    parser.add_argument('--h-dim', type=int, default=64)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--dataset', type=str, default='mnist', choice=['mnist','svhn'], help='Dataset to use for training the classifier')
+    parser.add_argument('--dataset-loc', type=str, default='.', help='Dataset path')
+    parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--nesterov', type=bool, default=True)
     parser.add_argument('--weight-decay', type=float, default=5e-4)
-    parser.add_argument('--depth', type=float, default=16)
-    parser.add_argument('--widen-factor', type=float, default=8)
-    parser.add_argument('--dropRate', type=float, default=0.4)
+    parser.add_argument('--depth', type=float, default=16, help='Depth of the wide ResNet')
+    parser.add_argument('--widen-factor', type=float, default=8, help='Widen factor of the wide ResNet')
+    parser.add_argument('--dropRate', type=float, default=0.4, help='Dropout probability')
 
 
 def execute(args):

@@ -208,12 +208,12 @@ def train(args):
 
     classifier = models['classifier'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
-    #cluster = args.cluster.eval().to(args.device)
+    cluster = args.cluster.eval().to(args.device)
     print(classifier)
     print(discriminator)
 
-    optim_classifier = optim.Adam(classifier.parameters(), lr=1e-3, betas=(args.beta1, args.beta2))
-    optim_discriminator = optim.Adam(discriminator.parameters(), lr=1e-3, betas=(args.beta1, args.beta2))
+    optim_classifier = optim.Adam(classifier.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+    optim_discriminator = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 
     iter1 = iter(train_loader1)
     iter2 = iter(train_loader2)
@@ -229,8 +229,7 @@ def train(args):
         if data1.shape[0] != args.train_batch_size:
             batchx, iter1 = sample(iter1, train_loader1)
             data1 = batchx[0].to(args.device)
-        label = batchx[1].to(args.device)
-        #label = cluster(data1).argmax(1).detach()
+        label = cluster(data1).argmax(1).detach()
 
         batchy, iter2 = sample(iter2, train_loader2)
         data2 = batchy[0].to(args.device)
@@ -267,9 +266,7 @@ def train(args):
             batchy, titer2 = sample(titer2, test_loader2)
             data2 = batchy[0].to(args.device)
             print('Iter: %s' % i, time.time() - t0)
-            class_map = [0,1,2,3,4,5,6,7,8,9]
-            class_map = torch.LongTensor(class_map).to(args.device)
-            #class_map = evaluate_cluster(args.visualiser, i, args.nc, test_loader1, cluster, f'x', args.device)
+            class_map = evaluate_cluster(args.visualiser, i, args.nc, test_loader1, cluster, f'x', args.device)
             evaluate_cluster_accuracy(args.visualiser, i, test_loader1, class_map, classifier, f'x', args.device)
             evaluate_cluster_accuracy(args.visualiser, i, test_loader2, class_map, classifier, f'y', args.device)
             args.visualiser.plot(c_loss.cpu().detach().numpy(), title=f'Classifier loss', step=i)
