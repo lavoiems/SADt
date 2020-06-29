@@ -248,7 +248,7 @@ def train(args):
 
         ## Train the generator
         gmladv, gmlcl, gmlsty, gmlcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
-                                                 generator, discriminator, args.device)
+                                                         generator, discriminator, args.device)
         gmloss = gmladv + args.lambda_lcl*gmlcl + args.lambda_lsty*gmlsty + args.lambda_lcyc*gmlcyc
         optim_generator.zero_grad()
         optim_mapping_network.zero_grad()

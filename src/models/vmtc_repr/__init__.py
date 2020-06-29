@@ -7,8 +7,8 @@ import torch
 def parse_args(parser):
     parser.add_argument('--dataset-loc1', type=str, default='./data', help='Location dataset 1')
     parser.add_argument('--dataset-loc2', type=str, default='./data', help='location dataset 2')
-    parser.add_argument('--dataset1', type=str, default='mnist', choice=['mnist', 'svhn'], help='Dataset 1')
-    parser.add_argument('--dataset2', type=str, default='svhn', choice=['mnist', 'svhn'], help='Dataset2')
+    parser.add_argument('--dataset1', type=str, default='mnist', choices=['mnist', 'svhn'], help='Dataset 1')
+    parser.add_argument('--dataset2', type=str, default='svhn', choices=['mnist', 'svhn'], help='Dataset2')
     parser.add_argument('--h-dim', type=int, default=256, help='Number of hidden Dimensions')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--beta1', type=float, default=0.5, help='Adam parameter')

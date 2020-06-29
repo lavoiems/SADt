@@ -12,7 +12,7 @@ def parse_args(parser):
     parser.add_argument('--ss-path', type=str, required=True, help='Path of the pre-trained self-supervised model (MoCO-v2)')
     parser.add_argument('--dataset-loc1', type=str, default='./data/sketch', help='Location of the first dataset')
     parser.add_argument('--dataset-loc2', type=str, default='./data/real', help='Location of the second dataset')
-    parser.add_argument('--dataset', type=str, default='cond_visda', choice=['cond_visda', 'cond_mnist_svhn'], help='Dataset framework for training')
+    parser.add_argument('--dataset', type=str, default='cond_visda', choices=['cond_visda', 'cond_mnist_svhn'], help='Dataset framework for training')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--f_lr', type=float, default=1e-6, help='Learning rate for Mapping Network')
     parser.add_argument('--wd', type=float, default=1e-4, help='Weight decay factor')
