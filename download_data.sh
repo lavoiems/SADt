@@ -31,11 +31,11 @@ then
     mkdir test/speedboat
     mkdir test/tiger
 
-    ls bird/      | head -15 | xargs -i mv bird/{}      test/bird
-    ls dog/       | head -15 | xargs -i mv dog/{}       test/dog
-    ls flower/    | head -15 | xargs -i mv flower/{}    test/flower
-    ls speedboat/ | head -15 | xargs -i mv speedboat/{} test/speedboat
-    ls tiger/     | head -15 | xargs -i mv tiger/{}     test/tiger
+    #ls bird/      | head -15 | xargs -i mv bird/{}      test/bird
+    #ls dog/       | head -15 | xargs -i mv dog/{}       test/dog
+    #ls flower/    | head -15 | xargs -i mv flower/{}    test/flower
+    #ls speedboat/ | head -15 | xargs -i mv speedboat/{} test/speedboat
+    #ls tiger/     | head -15 | xargs -i mv tiger/{}     test/tiger
 
     ls bird/      | xargs -i mv bird/{}      train/bird
     ls dog/       | xargs -i mv dog/{}       train/dog

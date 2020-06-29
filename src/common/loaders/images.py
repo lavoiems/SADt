@@ -198,29 +198,28 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
 class CondDataset(data.Dataset):
     def __init__(self, dataset1, dataset2, semantics, nc, device):
         labels = []
-        maps = [1, 4, 3, 0, 2]
-        total = 0
-        correct = 0
+        #total = 0
+        #correct = 0
         print('Infering semantics for dataset1', end='\t')
         for sample, gt in dataset1:
             sample = sample.to(device)
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
-            correct += int(maps[gt] == label)
-            total += 1
-        print(f'Accuracy: {correct/total}')
-        total = 0
-        correct = 0
+            #correct += int(maps[gt] == label)
+            #total += 1
+        #print(f'Accuracy: {correct/total}')
+        #total = 0
+        #correct = 0
         print('Infering semantics for dataset2', end='\t')
         for sample, gt in dataset2:
             sample = sample.to(device)
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
-            correct += int(maps[gt] == label)
-            total += 1
-        print(f'Accuracy: {correct/total}')
+            #correct += int(maps[gt] == label)
+            #total += 1
+        #print(f'Accuracy: {correct/total}')
 
         self.labels = torch.LongTensor(labels)
         self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]

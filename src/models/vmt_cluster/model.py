@@ -91,5 +91,4 @@ class Classifier(nn.Module):
 
     def forward(self, x):
         o = self.x(x)
-        return self.mlp(o).squeeze()
-
+        return self.mlp(o).view(x.shape[0], -1)
