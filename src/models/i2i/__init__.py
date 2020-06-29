@@ -67,9 +67,11 @@ def execute(args):
 
     semantics = semantics_fn(ssx, da)
 
+    t0 = time.time()
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
                                                   args.device)
+    print(f'Time to create loaders: {time.time() - t0}')
     args.img_size = shape[1]
     args.loaders = (train_loader, test_loader)
     args.shape = shape
