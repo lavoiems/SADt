@@ -182,10 +182,11 @@ def train(args):
     style_encoder = models['style_encoder'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
 
-    generator.apply(he_init)
-    mapping_network.apply(he_init)
-    style_encoder.apply(he_init)
-    discriminator.apply(he_init)
+    if not args.reload:
+        generator.apply(he_init)
+        mapping_network.apply(he_init)
+        style_encoder.apply(he_init)
+        discriminator.apply(he_init)
 
     generator_ema = models['generator_ema'].to(args.device)
     mapping_network_ema = models['mapping_network_ema'].to(args.device)
