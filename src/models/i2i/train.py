@@ -277,7 +277,7 @@ def train(args):
         t0gm = time.time()
         t0gmf = time.time()
         gmladv, gmlcl, gmlsty, gmlcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
-                                                 generator, discriminator, args.device)
+                                                         generator, discriminator, args.device)
         gmloss = gmladv + args.lambda_lcl*gmlcl + args.lambda_lsty*gmlsty + args.lambda_lcyc*gmlcyc
         print(f'Time forward generator mapping: {time.time() - t0gmf}')
         optim_generator.zero_grad()

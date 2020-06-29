@@ -5,7 +5,7 @@ from common.loaders import images
 
 
 def parse_args(parser):
-    parser.add_argument('--dataset', type=str, default='mnist', choice=['mnist','svhn'], help='Dataset to use for training the classifier')
+    parser.add_argument('--dataset', type=str, default='mnist', choices=['mnist','svhn'], help='Dataset to use for training the classifier')
     parser.add_argument('--dataset-loc', type=str, default='.', help='Dataset path')
     parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--momentum', type=float, default=0.9)

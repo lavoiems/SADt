@@ -4,7 +4,7 @@ from common.loaders import images
 
 def parse_args(parser):
     parser.add_argument('--dataset-loc', type=str, default='./data', help='Location of the dataset')
-    parser.add_argument('--dataset', type=str, default='imnist', choice=['imnist', 'isvhn'], help='Dataset to use for training')
+    parser.add_argument('--dataset', type=str, default='imnist', choices=['imnist', 'isvhn'], help='Dataset to use for training')
     parser.add_argument('--h-dim', type=int, default=256, help='N hidden channels in the network')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--beta1', type=float, default=0, help='Adam parameter')
