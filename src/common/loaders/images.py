@@ -1,9 +1,11 @@
+import time
 import os
 import random
 import torch.utils.data as data
 import numpy as np
 import torch
 from torchvision import datasets, transforms
+from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data.sampler import SubsetRandomSampler
 
 
@@ -161,6 +163,13 @@ def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=
     return train_loader, test_loader, shape, n_classes
 
 
+def _make_balanced_sampler(labels):
+    class_counts = np.bincount(labels)
+    class_weights = 1. / class_counts
+    weights = class_weights[labels]
+    return WeightedRandomSampler(weights, len(weights))
+
+
 def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     crop = transforms.RandomResizedCrop(
@@ -182,15 +191,16 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
 
     train1 = datasets.ImageFolder(os.path.join(root1, 'train'), transform=train_transform)
     train2 = datasets.ImageFolder(os.path.join(root2, 'train'), transform=test_transform)
-    train = CondDataset(train1, train2, semantics, nc, device)
     test1 = datasets.ImageFolder(os.path.join(root1, 'test'), transform=train_transform)
     test2 = datasets.ImageFolder(os.path.join(root2, 'test'), transform=test_transform)
+    train = CondDataset(train1, train2, semantics, nc, device)
     test = CondDataset(test1, test2, semantics, nc, device)
 
-    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
-                                   num_workers=10, drop_last=True, pin_memory=False)
+    sampler = _make_balanced_sampler(train.labels)
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, sampler=sampler,
+                                   num_workers=8, drop_last=True)
     test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
-                                  num_workers=10, drop_last=False)
+                                  num_workers=8, drop_last=False)
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, nc
 
@@ -198,28 +208,18 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
 class CondDataset(data.Dataset):
     def __init__(self, dataset1, dataset2, semantics, nc, device):
         labels = []
-        #total = 0
-        #correct = 0
-        print('Infering semantics for dataset1', end='\t')
-        for sample, gt in dataset1:
+        print('Infering semantics for dataset1')
+        for sample, _ in dataset1:
             sample = sample.to(device)
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
-            #correct += int(maps[gt] == label)
-            #total += 1
-        #print(f'Accuracy: {correct/total}')
-        #total = 0
-        #correct = 0
-        print('Infering semantics for dataset2', end='\t')
-        for sample, gt in dataset2:
+        print('Infering semantics for dataset2')
+        for sample in dataset2:
             sample = sample.to(device)
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)
             labels.append(label)
-            #correct += int(maps[gt] == label)
-            #total += 1
-        #print(f'Accuracy: {correct/total}')
 
         self.labels = torch.LongTensor(labels)
         self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]

@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch import optim
 from common.util import save_models, sample, normalize_channels
-from sklearn.manifold import TSNE
 from common.initialize import initialize, infer_iteration
 from . import model
 
@@ -38,24 +37,6 @@ def evaluate(visualiser, i, loader, classifier, id, device):
     accuracy = accuracy.cpu().numpy()
     visualiser.plot(accuracy, title=f'Accuracy {id}', step=i)
     return accuracy
-
-
-@torch.no_grad()
-def tsne(visualiser, data, label, id, classifier):
-    fig = plt.figure()
-    d = classifier.conv(data).squeeze().cpu().numpy()
-    pc = TSNE().fit_transform(d).transpose(1,0)
-    colors = [f'C{l}' for l in label]
-    plt.scatter(*pc, c=colors)
-    visualiser.matplotlib(fig, f'feature map{id}', 0)
-    plt.clf()
-
-    pc = TSNE().fit_transform(data.cpu().view(data.shape[0], -1).numpy()).transpose(1,0)
-    colors = [f'C{l}' for l in label]
-    plt.scatter(*pc, c=colors)
-    visualiser.matplotlib(fig, f'source data{id}', 0)
-    plt.clf()
-    plt.close(fig)
 
 
 def train(args):
