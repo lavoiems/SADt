@@ -133,7 +133,12 @@ def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, 
 
 
 def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=False, **kwargs):
+    crop = transforms.RandomResizedCrop(
+        256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
+    rand_crop = transforms.Lambda(
+        lambda x: crop(x) if random.random() < 0.5 else x)
     train_transform = [
+        rand_crop,
         transforms.Resize((256, 256), interpolation=1),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
