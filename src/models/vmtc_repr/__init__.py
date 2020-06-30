@@ -16,10 +16,10 @@ def parse_args(parser):
 
     parser.add_argument('--z-dim', type=int, default=2048, help='Bottleneck size')
     parser.add_argument('--cw', type=float, default=1, help='Lambda source classifier')
-    parser.add_argument('--tcw', type=float, default=0.1, help='Lambda target cluster')
-    parser.add_argument('--dw', type=float, default=0.01, help='Lambda Adversrial')
+    parser.add_argument('--tcw', type=float, default=1, help='Lambda target cluster')
+    parser.add_argument('--dw', type=float, default=1, help='Lambda Adversrial')
     parser.add_argument('--smw', type=float, default=1, help='Lambda source manifold')
-    parser.add_argument('--tmw', type=float, default=0.1, help='Lambda target manifold')
+    parser.add_argument('--tmw', type=float, default=1, help='Lambda target manifold')
     parser.add_argument('--ss-path', type=str, required=True, help='Path of pre-trained self-supervised model (MoCO v2)')
 
 
