@@ -78,25 +78,24 @@ def save_image(x, ncol, filename):
 
 
 if __name__ == '__main__':
-    state_dict_path, data_root, name, domain, ss_path, da_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+    state_gen, state_map, data_root, name, domain, ss_path, da_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7]
     device = 'cuda'
     N = 5
     latent_dim = 16
     domain = int(domain)
     d1_nsamples = 3175
     # Load model
-    state_dict = torch.load(state_dict_path, map_location='cpu')
     generator = Generator(w_hpf=0).to(device)#.eval()
-    generator.load_state_dict(state_dict['generator'])
+    generator.load_state_dict(torch.load(state_gen, map_location='cpu'))
     mapping = MappingNetwork()
-    mapping.load_state_dict(state_dict['mapping_network'])
-    mapping.to(device)#.eval()
+    mapping.load_state_dict(torch.load(state_map, map_location='cpu'))
+    mapping.to(device)
 
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
 
     dataset = dataset_single(data_root, 'A' if domain else 'B')
-    idxs = [0, 445, 774, 1230, 1702]
+    idxs = [0, 15, 30, 45, 60]
     data = []
     for i in range(N):
         idx = idxs[i]
@@ -104,11 +103,7 @@ if __name__ == '__main__':
     data = torch.stack(data).to(device)
 
     with torch.no_grad():
-        maps = torch.LongTensor([3, 0, 4, 2, 1])
         y_src = da(ss((data+1)*0.5)).argmax(1)
-        print(y_src)
-        y_src = maps[y_src].to(device)
-        print(y_src)
 
     # Infer translated images
     d_trg_list = [torch.tensor(0==domain).repeat(25).long().to(device)]
