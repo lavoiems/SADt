@@ -38,8 +38,11 @@ def cluster_model(cluster_path):
 class dataset_single(data.Dataset):
   def __init__(self, dataroot, setname):
     self.dataroot = dataroot
-    images = os.listdir(os.path.join(self.dataroot, 'test' + setname))
-    self.img = [os.path.join(self.dataroot, 'test' + setname, x) for x in images]
+    categories = os.listdir(os.path.join(self.dataroot, 'test' + setname))
+    self.img = []
+    for cat in categories:
+        images = os.listdir(os.path.join(self.dataroot, 'test'+setname, cat))
+        self.img += [os.path.join(self.dataroot, 'test' + setname, cat, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
     self.input_dim = 3
