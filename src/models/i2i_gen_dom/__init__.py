@@ -9,7 +9,8 @@ from common.initialize import load_last_model
 
 def parse_args(parser):
     parser.add_argument('--da-path', type=str, required=True, help='Path of the pre-trained domain adaptation network (vtmc_repr)')
-    parser.add_argument('--ss-path', type=str, required=True, help='Path of the pre-trained self-supervised model (MoCO-v2)')
+    parser.add_argument('--ss-path', type=str, default=None, help='Path of the pre-trained self-supervised model')
+    parser.add_argument('--da-model', type=str, default='vmtc_repr', help='Name of the domain adaptation model')
     parser.add_argument('--dataset-loc1', type=str, default='./data/sketch', help='Location of the first dataset')
     parser.add_argument('--dataset-loc2', type=str, default='./data/real', help='Location of the second dataset')
     parser.add_argument('--dataset', type=str, default='cond_visda', choices=['cond_visda', 'cond_mnist_svhn'], help='Dataset framework for training')
@@ -31,11 +32,15 @@ def parse_args(parser):
     parser.add_argument('--lambda_lcyc', type=float, default=1, help='Lambda cycle loss')
 
 
-def semantics_fn(ss, da):
-    def evaluate(x):
-        o = ss(x)
-        return da(o)
-    return evaluate
+class SemanticFN(torch.nn.Module):
+    def __init__(self, ss, da):
+        super().__init__()
+        self.ss = ss
+        self.da = da
+
+    def forward(self, x):
+        o = self.ss(x)
+        return self.da(o)
 
 
 def execute(args):
@@ -66,9 +71,11 @@ def execute(args):
         print(err)
         ssx = ssx.to(args.device)
         ssx.eval()
-        semantics = semantics_fn(ssx, da)
+        semantics = SemanticFN(ssx, da)
     else:
         semantics = da
+    semantics.eval()
+    semantics = semantics.to(args.device)
 
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc, args.device)

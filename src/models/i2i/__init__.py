@@ -9,7 +9,8 @@ from common.initialize import load_last_model
 
 def parse_args(parser):
     parser.add_argument('--da-path', type=str, required=True, help='Path of the pre-trained domain adaptation network (vmtc_repr)')
-    parser.add_argument('--ss-path', type=str, required=True, help='Path of the pre-trained self-supervised model (MoCO-v2)')
+    parser.add_argument('--ss-path', type=str, default=None, help='Path of the pre-trained self-supervised model')
+    parser.add_argument('--da-model', type=str, default='vmtc_repr', help='Name of the domain adaptation model')
     parser.add_argument('--dataset-loc1', type=str, default='./data/sketch', help='Location of the first dataset')
     parser.add_argument('--dataset-loc2', type=str, default='./data/real', help='Location of the second dataset')
     parser.add_argument('--dataset', type=str, default='cond_visda', choices=['cond_visda', 'cond_mnist_svhn'], help='Dataset framework for training')
@@ -45,22 +46,7 @@ class SemanticFN(torch.nn.Module):
 def execute(args):
     dataset = getattr(images, args.dataset)
 
-    ssx = torchvision.models.resnet50().to(args.device)
-    ssx.fc = torch.nn.Identity()
-    state_dict = torch.load(args.ss_path, map_location='cpu')['state_dict']
-    for k in list(state_dict.keys()):
-        # retain only encoder_q up to before the embedding layer
-        if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
-            # remove prefix
-            state_dict[k[len("module.encoder_q."):]] = state_dict[k]
-        # delete renamed or unused k
-        del state_dict[k]
-    err = ssx.load_state_dict(state_dict, strict=False)
-    print(err)
-    ssx = ssx.to(args.device)
-    ssx.eval()
-
-    model_definition = import_module('.'.join(('models', 'vmtc_repr', 'train')))
+    model_definition = import_module('.'.join(('models', args.da_model, 'train')))
     model_parameters = get_args(args.da_path)
     model_parameters['nc'] = args.nc
     models = model_definition.define_models(**model_parameters)
@@ -69,7 +55,25 @@ def execute(args):
     da = da.to(args.device)
     da.eval()
 
-    semantics = SemanticFN(ssx, da)
+    if args.ss_path:
+        ssx = torchvision.models.resnet50().to(args.device)
+        ssx.fc = torch.nn.Identity()
+        state_dict = torch.load(args.ss_path, map_location='cpu')['state_dict']
+        for k in list(state_dict.keys()):
+            # retain only encoder_q up to before the embedding layer
+            if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+                # remove prefix
+                state_dict[k[len("module.encoder_q."):]] = state_dict[k]
+            # delete renamed or unused k
+            del state_dict[k]
+        err = ssx.load_state_dict(state_dict, strict=False)
+        print(err)
+        ssx = ssx.to(args.device)
+        ssx.eval()
+        semantics = SemanticFN(ssx, da)
+    else:
+        semantics = da
+
     semantics = semantics.to(args.device)
     semantics.eval()
 
