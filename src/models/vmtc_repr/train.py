@@ -10,6 +10,13 @@ from common.initialize import initialize, infer_iteration
 from . import model
 
 
+def he_init(module):
+    if isinstance(module, torch.nn.Linear):
+        torch.nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+        if module.bias is not None:
+            torch.nn.init.constant_(module.bias, 0)
+
+
 @torch.no_grad()
 def get_initial_zx(loader, ss, device):
     initial_zx = []
@@ -150,6 +157,8 @@ def train(args):
 
     classifier = models['classifier'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
+    classifier.apply(he_init)
+    discriminator.apply(he_init)
     print(classifier)
     print(discriminator)
 

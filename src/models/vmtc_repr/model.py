@@ -8,10 +8,6 @@ class Discriminator(nn.Module):
 
         self.x = nn.Sequential(nn.Linear(h_dim+nc, 100),
                                nn.ReLU(inplace=True),
-                               nn.Linear(100, 100),
-                               nn.ReLU(inplace=True),
-                               nn.Linear(100, 100),
-                               nn.ReLU(inplace=True),
                                nn.Linear(100, 1))
         self.init()
 
