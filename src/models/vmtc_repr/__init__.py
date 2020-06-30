@@ -5,8 +5,8 @@ import torch
 
 
 def parse_args(parser):
-    parser.add_argument('--dataset-loc1', type=str, default='./data', help='Location dataset 1')
-    parser.add_argument('--dataset-loc2', type=str, default='./data', help='location dataset 2')
+    parser.add_argument('--dataset-loc1', type=str, default='./data/sketch', help='Location dataset 1')
+    parser.add_argument('--dataset-loc2', type=str, default='./data/real', help='location dataset 2')
     parser.add_argument('--dataset1', type=str, default='viada', help='Dataset 1')
     parser.add_argument('--dataset2', type=str, default='visda', help='Dataset2')
     parser.add_argument('--h-dim', type=int, default=256, help='Number of hidden Dimensions')
