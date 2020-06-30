@@ -107,7 +107,7 @@ Hence, we propose to incorporate semantics in a model which is inspired from Sta
 
 **Domain translation Sketch-Real**
 ```bash
-python src/main.py --train-batch-size 8 --evaluate 1000 --checkpoint 2000 --exp-name i2i --cuda --run-id sketch-real i2i --da-path ./experiments/vmtc_repr/vmtc-repr_ln-sketch-real-None/ --dataset cond_visda --dataset-loc1 ./data/sketch/ --dataset-loc2 ./data/real/ --ss-path moco_v2_800ep_pretrain.pth.tar
+python src/main.py --train-batch-size 8 --test-batch-size 5 --iterations 100001 --evaluate 1000 --checkpoint 2000 --exp-name i2i --cuda --run-id sketch-real i2i --da-path ./experiments/vmtc_repr/vmtc-repr_sketch-real-None/ --dataset cond_visda --dataset-loc1 ./data/sketch/ --dataset-loc2 ./data/real/ --ss-path moco_v2_800ep_pretrain.pth.tar --lambda-lcl 0.5
 ```
 
 ## Visualizing the results

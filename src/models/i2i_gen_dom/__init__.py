@@ -25,11 +25,11 @@ def parse_args(parser):
     parser.add_argument('--bottleneck-size', type=int, default=64, help='Spatial dimension of the bottleneck')
     parser.add_argument('--n-unshared-layers', type=int, default=0, help='Number of unshared layer in the style encoder')
     parser.add_argument('--nc', type=float, default=5, help='Number of classes to transfer')
-    parser.add_argument('--lambda_gp', type=float, default=1, help='Lambda gradient penalty')
-    parser.add_argument('--lambda_dclass', type=float, default=1, help='Lambda classifier discriminator')
-    parser.add_argument('--lambda_lcl', type=float, default=1, help='Lambda classifier loss generator')
-    parser.add_argument('--lambda_lsty', type=float, default=1, help='Lambda style loss')
-    parser.add_argument('--lambda_lcyc', type=float, default=1, help='Lambda cycle loss')
+    parser.add_argument('--lambda-gp', type=float, default=1, help='Lambda gradient penalty')
+    parser.add_argument('--lambda-dclass', type=float, default=1, help='Lambda classifier discriminator')
+    parser.add_argument('--lambda-lcl', type=float, default=1, help='Lambda classifier loss generator')
+    parser.add_argument('--lambda-lsty', type=float, default=1, help='Lambda style loss')
+    parser.add_argument('--lambda-lcyc', type=float, default=1, help='Lambda cycle loss')
 
 
 class SemanticFN(torch.nn.Module):
