@@ -82,7 +82,7 @@ model can be done as follows:
 
 **Domain adaptation with clustering on Sketch-Real**
 ```bash
-python src/main.py --exp-name vmtc-rept --cuda --run-id sketch-real vmtc_repr --dataset-loc1 data/real --dataset-loc2 data/sketch --ss-path moco_v2_800ep_pretrain.pth.tar
+python src/main.py --exp-name vmtc-repr --cuda --run-id sketch-real vmtc_repr --dataset-loc1 data/real --dataset-loc2 data/sketch --ss-path moco_v2_800ep_pretrain.pth.tar
 ```
 
 ### udt
