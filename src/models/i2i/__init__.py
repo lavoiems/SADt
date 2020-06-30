@@ -31,11 +31,15 @@ def parse_args(parser):
     parser.add_argument('--lambda_lcyc', type=float, default=1, help='Lambda cycle loss')
 
 
-def semantics_fn(ss, da):
-    def evaluate(x):
-        o = ss(x)
-        return da(o)
-    return evaluate
+class SemanticFN(torch.nn.Module):
+    def __init__(self, ss, da):
+        super().__init__()
+        self.ss = ss
+        self.da = da
+
+    def forward(self, x):
+        o = self.ss(x)
+        return self.da(o)
 
 
 def execute(args):
@@ -65,7 +69,9 @@ def execute(args):
     da = da.to(args.device)
     da.eval()
 
-    semantics = semantics_fn(ssx, da)
+    semantics = SemanticFN(ssx, da)
+    semantics = semantics.to(args.device)
+    semantics.eval()
 
     t0 = time.time()
     train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,

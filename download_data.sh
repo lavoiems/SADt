@@ -1,13 +1,14 @@
 #!/bin/bash
 
+FOLDER=data
 
 if [[ $1  =~ ^(sketch|real)$ ]];
 then
     echo "Downloading data"
     wget http://csr.bu.edu/ftp/visda/2019/multi-source/$1.zip
-    mkdir data
-    mv $1.zip data
-    cd data
+    mkdir $FOLDER
+    mv $1.zip $FOLDER
+    cd $FOLDER
     unzip $1.zip "$1/bird/*"
     unzip $1.zip "$1/dog/*"
     unzip $1.zip "$1/flower/*"
@@ -31,11 +32,11 @@ then
     mkdir test/speedboat
     mkdir test/tiger
 
-    #ls bird/      | head -15 | xargs -i mv bird/{}      test/bird
-    #ls dog/       | head -15 | xargs -i mv dog/{}       test/dog
-    #ls flower/    | head -15 | xargs -i mv flower/{}    test/flower
-    #ls speedboat/ | head -15 | xargs -i mv speedboat/{} test/speedboat
-    #ls tiger/     | head -15 | xargs -i mv tiger/{}     test/tiger
+    ls bird/      | head -15 | xargs -i mv bird/{}      test/bird
+    ls dog/       | head -15 | xargs -i mv dog/{}       test/dog
+    ls flower/    | head -15 | xargs -i mv flower/{}    test/flower
+    ls speedboat/ | head -15 | xargs -i mv speedboat/{} test/speedboat
+    ls tiger/     | head -15 | xargs -i mv tiger/{}     test/tiger
 
     ls bird/      | xargs -i mv bird/{}      train/bird
     ls dog/       | xargs -i mv dog/{}       train/dog

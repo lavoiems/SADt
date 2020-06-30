@@ -131,7 +131,6 @@ def moving_average(model, model_test, beta=0.999):
 
 
 def define_models(**parameters):
-    t0 = time.time()
     generator = model.Generator(**parameters)
     mapping_network = model.MappingNetwork(**parameters)
     style_encoder = model.StyleEncoder(**parameters)
@@ -139,7 +138,6 @@ def define_models(**parameters):
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)
-    print(f'Time to create the models: {time.time()-t0}')
     return {
         'generator': generator,
         'mapping_network': mapping_network,
@@ -191,7 +189,6 @@ def train(args):
         mapping_network.apply(he_init)
         style_encoder.apply(he_init)
         discriminator.apply(he_init)
-        print(f'Time to reload the models: {time.time()-t0r}')
 
     generator_ema = models['generator_ema'].to(args.device)
     mapping_network_ema = models['mapping_network_ema'].to(args.device)
