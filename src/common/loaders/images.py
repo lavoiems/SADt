@@ -220,7 +220,7 @@ class CondDataset(data.Dataset):
             label = semantics(sample).argmax(1)
             labels.append(label)
         print('Infering semantics for dataset2')
-        for sample in dataset2:
+        for sample, _ in dataset2:
             sample = sample.to(device)
             sample = (sample.unsqueeze(0)+1)*0.5
             label = semantics(sample).argmax(1)

@@ -171,7 +171,6 @@ def evaluate(visualiser, data, y, domain, nz, mapping, generator, i, device):
 
 
 def train(args):
-    t0c = time.time()
     parameters = vars(args)
     train_loader, test_loader = args.loaders
 
@@ -184,7 +183,6 @@ def train(args):
     discriminator = models['discriminator'].to(args.device)
 
     if not args.reload:
-        t0r = time.time()
         generator.apply(he_init)
         mapping_network.apply(he_init)
         style_encoder.apply(he_init)
@@ -199,7 +197,6 @@ def train(args):
     print(style_encoder)
     print(discriminator)
 
-    t0o = time.time()
     optim_generator = optim.Adam(generator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
                                  weight_decay=args.wd)
     optim_mapping_network = optim.Adam(mapping_network.parameters(), lr=args.f_lr, betas=(args.beta1, args.beta2),
@@ -208,7 +205,6 @@ def train(args):
                                      weight_decay=args.wd)
     optim_discriminator = optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.beta1, args.beta2),
                                      weight_decay=args.wd)
-    print(f'Time to create the optimizers: {time.time()-t0o}')
     optims = {
         'optim_generator': optim_generator,
         'optim_mapping_network': optim_mapping_network,
@@ -219,7 +215,6 @@ def train(args):
     iterator = iter(train_loader)
     test_iterator = iter(test_loader)
     iteration = infer_iteration(list(models.keys())[0], args.reload, args.model_path, args.save_path)
-    print(f'Overall time before training: {time.time()-t0c}')
     t0 = time.time()
     for i in range(iteration, args.iterations):
         #generator.train()
@@ -227,8 +222,6 @@ def train(args):
         #style_encoder.train()
         #discriminator.train()
 
-        t0i = time.time()
-        t0l = time.time()
         batch, iterator = sample(iterator, train_loader)
         datax = batch[0].to(args.device)
         label = batch[1].to(args.device)
@@ -237,78 +230,43 @@ def train(args):
         domy = batch[4].to(args.device)
         z1 = torch.randn(args.train_batch_size, args.z_dim)
         z1 = z1.to(args.device)
-        print(f'Time to load data: {time.time()-t0l}')
 
         ## Train the discriminator
-        t0dm = time.time()
-        t0dmf = time.time()
         dmlt, dmlgp, dmlg, dmlcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
                                              discriminator, args.device)
         dmloss = dmlt + dmlg + args.lambda_gp*dmlgp + args.lambda_dclass*dmlcl
-        print(f'Time forward disc mapping: {time.time() - t0dmf}')
         optim_discriminator.zero_grad()
-        t0dmb = time.time()
         dmloss.backward()
-        print(f'Time backward disc mapping: {time.time() - t0dmb}')
-        t0dms = time.time()
         optim_discriminator.step()
-        print(f'Time step disc mapping: {time.time() - t0dms}')
-        print(f'Overall time disc mapping: {time.time() - t0dm}')
 
-        t0ds = time.time()
-        t0dsf = time.time()
         dslt, dslgp, dslg, dslcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
         dsloss = dslt + dslg + args.lambda_gp*dslgp + args.lambda_dclass*dslcl
-        print(f'Time forward disc style: {time.time() - t0dsf}')
         optim_discriminator.zero_grad()
-        t0dsb = time.time()
         dsloss.backward()
-        print(f'Time backward disc style: {time.time() - t0dsb}')
-        t0dss = time.time()
         optim_discriminator.step()
-        print(f'Time step disc style: {time.time() - t0dss}')
-        print(f'Overall time disc style: {time.time() - t0ds}')
 
 
         ## Train the generator
-        t0gm = time.time()
-        t0gmf = time.time()
         gmladv, gmlcl, gmlsty, gmlcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
                                                          generator, discriminator, args.device)
         gmloss = gmladv + args.lambda_lcl*gmlcl + args.lambda_lsty*gmlsty + args.lambda_lcyc*gmlcyc
-        print(f'Time forward generator mapping: {time.time() - t0gmf}')
         optim_generator.zero_grad()
         optim_mapping_network.zero_grad()
         optim_style_encoder.zero_grad()
-        t0gmb = time.time()
         gmloss.backward()
-        print(f'Time backward generator mapping: {time.time() - t0gmb}')
-        t0gms = time.time()
         optim_style_encoder.step()
         optim_mapping_network.step()
         optim_generator.step()
-        print(f'Time step gen mapping: {time.time() - t0gms}')
-        print(f'Overall time generator mapping: {time.time() - t0gm}')
 
-        t0gs = time.time()
-        t0gsf = time.time()
         gsladv, gslcl, gslsty, gslcyc = gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
         gsloss = gsladv + args.lambda_lcl*gslcl + args.lambda_lsty*gslsty + args.lambda_lcyc*gslcyc
-        print(f'Time forward generator style: {time.time() - t0gsf}')
         optim_generator.zero_grad()
-        t0gsb = time.time()
         gsloss.backward()
-        print(f'Time backward generator style: {time.time() - t0gsb}')
-        t0gss = time.time()
         optim_generator.step()
-        print(f'Time step gen style: {time.time() - t0gss}')
-        print(f'Overall time generator style: {time.time() - t0gs}')
 
         moving_average(generator, generator_ema, beta=0.999)
         moving_average(mapping_network, mapping_network_ema, beta=0.999)
         moving_average(style_encoder, style_encoder_ema, beta=0.999)
-        print(f'Overall time iteration: {time.time() - t0i}')
-
         if i % args.evaluate == 0:
             print('Iter: %s' % i, time.time() - t0, end='\t')
             #generator_ema.eval()
