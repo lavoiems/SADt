@@ -1,4 +1,5 @@
 import torch
+import argparse
 from PIL import Image
 import os
 from models.i2i_gen_dom.model import Generator, MappingNetwork
@@ -78,23 +79,30 @@ def save_image(x, ncol, filename):
 
 
 if __name__ == '__main__':
-    state_gen, state_map, data_root, name, domain, ss_path, da_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--state-dict-gen', type=str, help='Generator state dict path')
+    parser.add_argument('--state-dict-map', type=str, help='Mapping network state dict path')
+    parser.add_argument('--model', type=str, help='Model name')
+    parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
+    parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
+    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
+    parser.add_argument('--data-root', type=str, help='Path of the data')
+    args = parser.parse_args()
     device = 'cuda'
     N = 5
     latent_dim = 16
-    domain = int(domain)
     d1_nsamples = 3175
     # Load model
-    generator = Generator(w_hpf=0).to(device)#.eval()
-    generator.load_state_dict(torch.load(state_gen, map_location='cpu'))
+    generator = Generator(w_hpf=0).to(device)
+    generator.load_state_dict(torch.load(args.state_gen, map_location='cpu'))
     mapping = MappingNetwork()
-    mapping.load_state_dict(torch.load(state_map, map_location='cpu'))
-    mapping.to(device)
+    mapping.load_state_dict(torch.load(args.state_map, map_location='cpu'))
+    mapping = mapping.to(device)
 
-    ss = ss_model(ss_path).cuda()
-    da = cluster_model(da_path).cuda()
+    ss = ss_model(args.ss_path).cuda()
+    da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(data_root, 'B' if domain else 'A')
+    dataset = dataset_single(args.data_root, 'B' if args.domain else 'A')
     idxs = [0, 15, 35, 51, 60]
     data = []
     for i in range(N):
@@ -106,7 +114,7 @@ if __name__ == '__main__':
         y_src = da(ss((data+1)*0.5)).argmax(1)
 
     # Infer translated images
-    d_trg_list = [torch.tensor(0==domain).repeat(25).long().to(device)]
+    d_trg_list = [torch.tensor(0==args.domain).repeat(25).long().to(device)]
     z_trg_list = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
     z_trg_list = z_trg_list.transpose(0,1).reshape(25, latent_dim)
     z_trg_list = torch.stack([z_trg_list])
@@ -123,11 +131,14 @@ if __name__ == '__main__':
             print(z_trg.shape, y_src.shape, d_trg.shape)
             s_trg = mapping(z_trg, y_src, d_trg)
             print(data.shape, s_trg.shape)
-            x_fake = generator(data, s_trg, d_trg)
+            if args.model == 'i2i_gen_dom':
+                x_fake = generator(data, s_trg, d_trg)
+            else:
+                x_fake = generator(data, s_trg)
             x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
     results = [None] * len(x_concat)
     print(x_concat[:5].shape, x_concat[N:].shape)
     results = torch.cat([x_concat[:5], x_concat[N:]])
-    save_image(results, 5, f'samples_name:{name}_domain:{domain}.png')
+    save_image(results, 5, f'samples_name:{args.model}_domain:{args.domain}.png')
