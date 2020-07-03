@@ -144,21 +144,14 @@ class Generator(nn.Module):
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
 
-    def forward(self, x, s, d, masks=None):
+    def forward(self, x, s, d):
         x = self.from_rgb(x)
         style = torch.cat((s, d.unsqueeze(1).float()), 1)
         style = self.style(style)
-        cache = {}
         for block in self.encode:
-            if (masks is not None) and (x.size(2) in [32, 64, 128]):
-                cache[x.size(2)] = x
             x = block(x)
         for block in self.decode:
             x = block(x, style)
-            if (masks is not None) and (x.size(2) in [32, 64, 128]):
-                mask = masks[0] if x.size(2) in [32] else masks[1]
-                mask = F.interpolate(mask, size=x.size(2), mode='bilinear')
-                x = x + self.hpf(mask * cache[x.size(2)])
         return self.to_rgb(x)
 
 
