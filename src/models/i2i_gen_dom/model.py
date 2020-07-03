@@ -108,7 +108,7 @@ class AdainResBlk(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_size=64, **kwargs):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_size=64, bottleneck_blocks=2, **kwargs):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
@@ -138,7 +138,7 @@ class Generator(nn.Module):
             dim_in = dim_out
 
         # bottleneck blocks
-        for _ in range(2):
+        for _ in range(bottleneck_blocks):
             self.encode.append(
                 ResBlk(dim_out, dim_out, normalize=True))
             self.decode.insert(

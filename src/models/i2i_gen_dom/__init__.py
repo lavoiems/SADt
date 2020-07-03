@@ -23,6 +23,7 @@ def parse_args(parser):
     parser.add_argument('--style-dim', type=int, default=64, help='N channels of the style output')
     parser.add_argument('--max-conv-dim', type=int, default=512, help='Maximum N channels in the network')
     parser.add_argument('--bottleneck-size', type=int, default=64, help='Spatial dimension of the bottleneck')
+    parser.add_argument('--bottleneck-blocks', type=int, default=2, help='Number of bottleneck blocks in generator')
     parser.add_argument('--n-unshared-layers', type=int, default=0, help='Number of unshared layer in the style encoder')
     parser.add_argument('--img-dim', type=int, default=256, help='Images dimension')
     parser.add_argument('--nc', type=float, default=5, help='Number of classes to transfer')
