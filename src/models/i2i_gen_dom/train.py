@@ -123,6 +123,7 @@ def moving_average(model, model_test, beta=0.999):
 
 
 def define_models(**parameters):
+    print(parameters)
     generator = model.Generator(**parameters)
     mapping_network = model.MappingNetwork(**parameters)
     style_encoder = model.StyleEncoder(**parameters)

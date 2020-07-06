@@ -170,11 +170,21 @@ def evaluate(visualiser, data, y, domain, nz, mapping, generator, i, device):
     visualiser.image(results.cpu().numpy(), title=f'Generated', step=i)
 
 
+def print_network(network, name):
+    num_params = 0
+    for p in network.parameters():
+        num_params += p.numel()
+    print("Number of parameters of %s: %i" % (name, num_params))
+
+
 def train(args):
     parameters = vars(args)
     train_loader, test_loader = args.loaders
 
     models = define_models(**parameters)
+    for k, m in models.items():
+        print_network(m, k)
+
     initialize(models, args.reload, args.save_path, args.model_path)
 
     generator = models['generator'].to(args.device)

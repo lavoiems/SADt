@@ -1,8 +1,10 @@
+from importlib import import_module
+from common.util import get_args
+from common.initialize import load_last_model
 import torch
 import argparse
 from PIL import Image
 import os
-from models.i2i_gen_dom.model import Generator, MappingNetwork
 from models.vmtc_repr.model import Classifier
 import sys
 import torchvision
@@ -39,11 +41,11 @@ def cluster_model(cluster_path):
 class dataset_single(data.Dataset):
   def __init__(self, dataroot, setname):
     self.dataroot = dataroot
-    categories = os.listdir(os.path.join(self.dataroot, 'test' + setname))
+    categories = os.listdir(os.path.join(self.dataroot, setname, 'test'))
     self.img = []
     for cat in categories:
-        images = os.listdir(os.path.join(self.dataroot, 'test'+setname, cat))
-        self.img += [os.path.join(self.dataroot, 'test' + setname, cat, x) for x in images]
+        images = os.listdir(os.path.join(self.dataroot, setname, 'test', cat))
+        self.img += [os.path.join(self.dataroot, setname, 'test', cat, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
     self.input_dim = 3
@@ -80,30 +82,33 @@ def save_image(x, ncol, filename):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--state-dict-gen', type=str, help='Generator state dict path')
-    parser.add_argument('--state-dict-map', type=str, help='Mapping network state dict path')
+    parser.add_argument('--model-path', type=str, help='Path of the model directory')
     parser.add_argument('--model', type=str, help='Model name')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--data-root', type=str, help='Path of the data')
     args = parser.parse_args()
+
     device = 'cuda'
     N = 5
     latent_dim = 16
     d1_nsamples = 3175
     # Load model
-    generator = Generator(w_hpf=0).to(device)
-    generator.load_state_dict(torch.load(args.state_gen, map_location='cpu'))
-    mapping = MappingNetwork()
-    mapping.load_state_dict(torch.load(args.state_map, map_location='cpu'))
-    mapping = mapping.to(device)
+    model_definition = import_module('.'.join(('models', args.model, 'train')))
+    model_parameters = get_args(args.model_path)
+    print(model_parameters)
+    models = model_definition.define_models(**model_parameters)
+    generator = models['generator_ema']
+    generator = load_last_model(generator, 'generator_ema', args.model_path).to(device)
+    mapping = models['mapping_network_ema']
+    mapping = load_last_model(mapping, 'mapping_network_ema', args.model_path).to(device)
 
     ss = ss_model(args.ss_path).cuda()
     da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(args.data_root, 'B' if args.domain else 'A')
-    idxs = [0, 15, 35, 51, 60]
+    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch')
+    idxs = [0, 15, 35, 50, 60]
     data = []
     for i in range(N):
         idx = idxs[i]

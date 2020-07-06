@@ -39,8 +39,11 @@ def cluster_model(cluster_path):
 class dataset_single(data.Dataset):
   def __init__(self, dataroot, setname):
     self.dataroot = dataroot
-    images = os.listdir(os.path.join(self.dataroot, 'test' + setname))
-    self.img = [os.path.join(self.dataroot, 'test' + setname, x) for x in images]
+    categories = os.listdir(os.path.join(self.dataroot, setname, 'test'))
+    self.img = []
+    for cat in categories:
+        images = os.listdir(os.path.join(self.dataroot, setname, 'test', cat))
+        self.img += [os.path.join(self.dataroot, setname, 'test', cat, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
     self.input_dim = 3
@@ -65,9 +68,6 @@ class dataset_single(data.Dataset):
       img = img.unsqueeze(0)
     return img
 
-  def __len__(self):
-    return self.size
-
 
 def save_image(x, ncol, filename):
     x = (x + 1) / 2
@@ -82,8 +82,6 @@ if __name__ == '__main__':
     domain = int(domain)
     d1_nsamples = 3175
     batch_size = 128
-    ss_path = '/network/tmp1/lavoiems/moco_v2_800ep_pretrain.pth.tar'
-    da_path = '/network/tmp1/lavoiems/vmtc_repr/vmtc-repr_ln-sketch-real-None/model/classifier_13029'
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
     generator = Generator(w_hpf=0).to(device).eval()
@@ -95,9 +93,9 @@ if __name__ == '__main__':
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
 
-    dataset = dataset_single(data_root, 'A' if domain else 'B')
+    dataset = dataset_single(data_root, 'real' if domain else 'sketch')
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    dataset = dataset_single(data_root, 'B' if domain else 'A')
+    dataset = dataset_single(data_root, 'sketch' if domain else 'real')
     trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
