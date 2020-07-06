@@ -1,3 +1,6 @@
+from importlib import import_module
+from common.util import get_args
+from common.initialize import load_last_model
 import torch
 from PIL import Image
 import os
@@ -87,12 +90,14 @@ if __name__ == '__main__':
     d1_nsamples = 3175
     batch_size = 128
     # Load model
-    state_dict = torch.load(args.state_dict_path, map_location='cpu')
-    generator = Generator(w_hpf=0).to(device).eval()
-    generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork()
-    mapping.load_state_dict(state_dict['mapping_network'])
-    mapping.to(device).eval()
+    model_definition = import_module('.'.join(('models', args.model, 'train')))
+    model_parameters = get_args(args.model_path)
+    print(model_parameters)
+    models = model_definition.define_models(**model_parameters)
+    generator = models['generator_ema']
+    generator = load_last_model(generator, 'generator_ema', args.model_path).to(device)
+    mapping = models['mapping_network_ema']
+    mapping = load_last_model(mapping, 'mapping_network_ema', args.model_path).to(device)
 
     ss = ss_model(args.ss_path).cuda()
     da = cluster_model(args.da_path).cuda()
