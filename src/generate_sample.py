@@ -6,7 +6,6 @@ import argparse
 from PIL import Image
 import os
 from models.vmtc_repr.model import Classifier
-import sys
 import torchvision
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
 from torch.utils import data

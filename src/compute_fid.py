@@ -3,7 +3,7 @@ from PIL import Image
 import os
 from src.models.i2i.model import Generator, MappingNetwork
 from src.models.vmtc_repr.model import Classifier
-import sys
+import argparse
 import torchvision
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
 from torch.utils import data
@@ -37,13 +37,10 @@ def cluster_model(cluster_path):
 
 
 class dataset_single(data.Dataset):
-  def __init__(self, dataroot, setname):
+  def __init__(self, dataroot, setname, category):
     self.dataroot = dataroot
-    categories = os.listdir(os.path.join(self.dataroot, setname, 'test'))
-    self.img = []
-    for cat in categories:
-        images = os.listdir(os.path.join(self.dataroot, setname, 'test', cat))
-        self.img += [os.path.join(self.dataroot, setname, 'test', cat, x) for x in images]
+    images = os.listdir(os.path.join(self.dataroot, setname, 'fid', category))
+    self.img = [os.path.join(self.dataroot, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
     self.input_dim = 3
@@ -54,7 +51,6 @@ class dataset_single(data.Dataset):
     transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     self.transforms = Compose(transforms)
     print('%s: %d images'%(setname, self.size))
-    return
 
   def __getitem__(self, index):
     data = self.load_img(self.img[index], self.input_dim)
@@ -76,32 +72,40 @@ def save_image(x, ncol, filename):
 
 
 if __name__ == '__main__':
-    state_dict_path, data_root, domain = sys.argv[1], sys.argv[2], sys.argv[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model-path', type=str, help='Path of the model directory')
+    parser.add_argument('--model', type=str, help='Model name')
+    parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
+    parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
+    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
+    parser.add_argument('--data-root', type=str, help='Path of the data')
+    parser.add_argument('--category', type=str, help='Category of FID to compute')
+    args = parser.parse_args()
+
     device = 'cuda'
     latent_dim = 16
-    domain = int(domain)
     d1_nsamples = 3175
     batch_size = 128
     # Load model
-    state_dict = torch.load(state_dict_path, map_location='cpu')
+    state_dict = torch.load(args.state_dict_path, map_location='cpu')
     generator = Generator(w_hpf=0).to(device).eval()
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device).eval()
 
-    ss = ss_model(ss_path).cuda()
-    da = cluster_model(da_path).cuda()
+    ss = ss_model(args.ss_path).cuda()
+    da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(data_root, 'real' if domain else 'sketch')
+    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch', args.category)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    dataset = dataset_single(data_root, 'sketch' if domain else 'real')
+    dataset = dataset_single(args.data_root, 'sketch' if args.domain else 'real', args.category)
     trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
     with torch.no_grad():
         print('Fetching generated data')
-        d = torch.tensor(0==domain).repeat(batch_size).long().to(device)
+        d = torch.tensor(0==args.domain).repeat(batch_size).long().to(device)
         for data in src:
             data = data.to(device)
             d_trg = d[:data.shape[0]]

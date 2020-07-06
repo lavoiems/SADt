@@ -32,6 +32,25 @@ then
     mkdir test/speedboat
     mkdir test/tiger
 
+    mkdir fid
+    mkdir fid/all
+    mkdir fid/bird
+    mkdir fid/dog
+    mkdir fid/flower
+    mkdir fid/speedboat
+    mkdir fid/tiger
+
+    cp bird/* fid/all
+    cp bird/* fid/bird
+    cp dog/* fid/all
+    cp dog/* fid/dog
+    cp flower/* fid/all
+    cp flower/* fid/flower
+    cp speedboat/* fid/all
+    cp speedboat/* fid/speedboat
+    cp tiger/* fid/all
+    cp tiger/* fid/tiger
+
     ls bird/      | head -15 | xargs -i mv bird/{}      test/bird
     ls dog/       | head -15 | xargs -i mv dog/{}       test/dog
     ls flower/    | head -15 | xargs -i mv flower/{}    test/flower
