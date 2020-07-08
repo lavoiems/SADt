@@ -4,8 +4,7 @@ from common.initialize import load_last_model
 import torch
 from PIL import Image
 import os
-from src.models.i2i.model import Generator, MappingNetwork
-from src.models.vmtc_repr.model import Classifier
+from models.vmtc_repr.model import Classifier
 import argparse
 import torchvision
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
@@ -43,7 +42,7 @@ class dataset_single(data.Dataset):
   def __init__(self, dataroot, setname, category):
     self.dataroot = dataroot
     images = os.listdir(os.path.join(self.dataroot, setname, 'fid', category))
-    self.img = [os.path.join(self.dataroot, x) for x in images]
+    self.img = [os.path.join(self.dataroot, setname, 'fid', category, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
     self.input_dim = 3
@@ -67,6 +66,8 @@ class dataset_single(data.Dataset):
       img = img.unsqueeze(0)
     return img
 
+  def __len__(self):
+      return len(self.img)
 
 def save_image(x, ncol, filename):
     x = (x + 1) / 2
