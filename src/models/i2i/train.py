@@ -26,14 +26,6 @@ def ce_loss(data, label, dom, classifier):
     return F.cross_entropy(pred, label)
 
 
-def cycle_loss(data, nz, generator1, generator2, device):
-    z = torch.randn(data.shape[0], nz, device=device)
-    gen = generator1(data, z)
-    z = torch.randn(data.shape[0], nz, device=device)
-    cycle = generator2(gen, z)
-    return F.l1_loss(data, cycle)
-
-
 def r1_reg(d_out, x_in):
     # zero-centered gradient penalty for real images
     batch_size = x_in.size(0)
@@ -125,6 +117,68 @@ def disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, d
     return lt, lgp, lg, lcl
 
 
+def compute_d_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_trg=None, masks=None):
+    assert (z_trg is None) != (x_trg is None)
+    # with real images
+    x_real.requires_grad_()
+    out = nets['discriminator'](x_real, d_org)
+    pred = nets['discriminator'].classify(x_real, d_org)
+    loss_class = F.cross_entropy(pred, y_real)
+    loss_real = adv_loss(out, 1)
+    loss_reg = r1_reg(out, x_real)
+
+    # with fake images
+    with torch.no_grad():
+        if z_trg is not None:
+            s_trg = nets['mapping_network'](z_trg, y_real, d_trg)
+        else:  # x_ref is not None
+            s_trg = nets['style_encoder'](x_trg, y_real, d_trg)
+
+        x_fake = nets['generator'](x_real, s_trg, masks=masks)
+    out = nets['discriminator'](x_fake, d_trg)
+    loss_fake = adv_loss(out, 0)
+
+    loss = loss_real + loss_fake + args.lambda_reg * loss_reg + loss_class
+    return loss, dict(real=loss_real.item(),
+                      fake=loss_fake.item(),
+                      clas=loss_class.item(),
+                      reg=loss_reg.item())
+
+
+def compute_g_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_ref=None, masks=None):
+    assert (z_trg is None) != (x_ref is None)
+
+    # adversarial loss
+    if z_trg is not None:
+        s_trg = nets['mapping_network'](z_trg, y_real, d_trg)
+    else:
+        s_trg = nets['style_encoder'](x_ref, y_real, d_trg)
+
+    x_fake = nets['generator'](x_real, s_trg, masks=masks)
+    out = nets['discriminator'](x_fake, d_trg)
+    pred = nets['discriminator'].classify(x_fake, d_trg)
+    loss_class = F.cross_entropy(pred, y_real)
+    loss_adv = adv_loss(out, 1)
+
+    # style reconstruction loss
+    s_pred = nets['style_encoder'](x_fake, y_real, d_org)
+    loss_sty = torch.mean(torch.abs(s_pred - s_trg))
+
+    # cycle-consistency loss
+    masks = None
+    s_org = nets['style_encoder'](x_real, y_real, d_org)
+    x_rec = nets['generator'](x_fake, s_org, masks=masks)
+    loss_cyc = torch.mean(torch.abs(x_rec - x_real))
+
+    loss = loss_adv + args.lambda_sty * loss_sty \
+         + args.lambda_cyc * loss_cyc \
+         + loss_class
+    return loss, dict(adv=loss_adv.item(),
+                      sty=loss_sty.item(),
+                      sem=loss_class.item(),
+                      cyc=loss_cyc.item())
+
+
 def moving_average(model, model_test, beta=0.999):
     for param, param_test in zip(model.parameters(), model_test.parameters()):
         param_test.data = torch.lerp(param.data, param_test.data, beta)
@@ -177,6 +231,11 @@ def print_network(network, name):
     print("Number of parameters of %s: %i" % (name, num_params))
 
 
+def reset_grad(optims):
+    for opt in optims.values():
+        opt.zero_grad()
+
+
 def train(args):
     parameters = vars(args)
     train_loader, test_loader = args.loaders
@@ -227,11 +286,6 @@ def train(args):
     iteration = infer_iteration(list(models.keys())[0], args.reload, args.model_path, args.save_path)
     t0 = time.time()
     for i in range(iteration, args.iterations):
-        #generator.train()
-        #mapping_network.train()
-        #style_encoder.train()
-        #discriminator.train()
-
         batch, iterator = sample(iterator, train_loader)
         datax = batch[0].to(args.device)
         label = batch[1].to(args.device)
@@ -242,37 +296,34 @@ def train(args):
         z1 = z1.to(args.device)
 
         ## Train the discriminator
-        dmlt, dmlgp, dmlg, dmlcl = disc_mapping_loss(datax, label, domx, domy, z1, mapping_network, generator,
-                                             discriminator, args.device)
-        dmloss = dmlt + dmlg + args.lambda_gp*dmlgp + args.lambda_dclass*dmlcl
-        optim_discriminator.zero_grad()
-        dmloss.backward()
+        d_loss1, d_losses_latent = compute_d_loss(
+            models, args, datax, label, domx, domy, z_trg=z1)
+        reset_grad(optims)
+        d_loss1.backward()
         optim_discriminator.step()
 
-        dslt, dslgp, dslg, dslcl = disc_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
-        dsloss = dslt + dslg + args.lambda_gp*dslgp + args.lambda_dclass*dslcl
-        optim_discriminator.zero_grad()
-        dsloss.backward()
+        d_loss2, d_losses_ref = compute_d_loss(
+            models, args, datax, label, domx, domy, x_trg=datay)
+        reset_grad(optims)
+        d_loss2.backward()
         optim_discriminator.step()
 
 
         ## Train the generator
-        gmladv, gmlcl, gmlsty, gmlcyc = gen_mapping_loss(datax, label, domx, domy, z1, mapping_network, style_encoder,
-                                                         generator, discriminator, args.device)
-        gmloss = gmladv + args.lambda_lcl*gmlcl + args.lambda_lsty*gmlsty + args.lambda_lcyc*gmlcyc
-        optim_generator.zero_grad()
-        optim_mapping_network.zero_grad()
-        optim_style_encoder.zero_grad()
-        gmloss.backward()
-        optim_style_encoder.step()
+        g_loss1, g_losses_latent = compute_g_loss(
+            models, args, datax, label, domx, domy, z_trg=z1)
+        reset_grad(optims)
+        g_loss1.backward()
+        optim_generator.step()
         optim_mapping_network.step()
+        optim_style_encoder.step()
+
+        g_loss2, g_losses_ref = compute_g_loss(
+            models, args, datax, label, domx, domy, x_ref=datay)
+        reset_grad(optims)
+        g_loss2.backward()
         optim_generator.step()
 
-        gsladv, gslcl, gslsty, gslcyc = gen_style_loss(datax, datay, label, domx, domy, style_encoder, generator, discriminator)
-        gsloss = gsladv + args.lambda_lcl*gslcl + args.lambda_lsty*gslsty + args.lambda_lcyc*gslcyc
-        optim_generator.zero_grad()
-        gsloss.backward()
-        optim_generator.step()
 
         moving_average(generator, generator_ema, beta=0.999)
         moving_average(mapping_network, mapping_network_ema, beta=0.999)
@@ -289,10 +340,10 @@ def train(args):
             dom = batch[2].to(args.device)
             evaluate(args.visualiser, data, label, dom, args.z_dim, mapping_network_ema, generator_ema, i, args.device)
 
-            print(f'Discriminator mapping loss: {dmloss}: (real: {dmlt}, gp: {dmlgp}, fake: {dmlg}, class: {dmlcl})')
-            print(f'discriminator style loss: {dsloss}: (real: {dslt}, gp: {dslgp}, fake: {dslg}, class: {dslcl})')
-            print(f'generator mapping loss: {gmloss}: (adv: {gmladv}, class: {gmlcl}, style: {gmlsty}, cycle: {gmlcyc})')
-            print(f'generator style loss: {gsloss}): (adv: {gsladv}, class: {gslcl}, style: {gslsty}, cycle: {gslcyc})')
+            print(f'Discriminator mapping loss: {d_loss1}: {d_losses_latent}')
+            print(f'discriminator style loss: {d_loss2}: {d_losses_ref}')
+            print(f'generator mapping loss: {g_loss1}: {g_losses_latent}')
+            print(f'generator style loss: {g_loss2}): {g_losses_ref}')
             save_models(models, i, args.model_path, args.checkpoint)
             save_models(optims, i, args.model_path, args.checkpoint)
             t0 = time.time()
