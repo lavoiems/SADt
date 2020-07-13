@@ -93,7 +93,6 @@ if __name__ == '__main__':
     # Load model
     model_definition = import_module('.'.join(('models', args.model, 'train')))
     model_parameters = get_args(args.model_path)
-    print(model_parameters)
     models = model_definition.define_models(**model_parameters)
     generator = models['generator_ema']
     generator = load_last_model(generator, 'generator_ema', args.model_path).to(device)
@@ -119,7 +118,6 @@ if __name__ == '__main__':
             for i in range(10):
                 z_trg = torch.randn(data.shape[0], latent_dim, device=device)
                 s_trg = mapping(z_trg, y_trg, d_trg)
-                print(data.shape, s_trg.shape)
                 gen = generator(data, s_trg, masks=None)
                 generated.append(gen)
         generated = torch.cat(generated)
@@ -129,10 +127,9 @@ if __name__ == '__main__':
         trg_data = []
         for data in trg:
             data = data.to(device)
-            print(data.shape)
             trg_data.append(data)
         trg_data = torch.cat(trg_data)
         print(trg_data.shape)
 
-        fid = fid.calculate_fid(trg_data, generated.cpu(), 512, device, 2048)
+        fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {fid}')
