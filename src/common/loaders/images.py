@@ -223,7 +223,7 @@ class SourceDataset(data.Dataset):
 
     def _make_dataset(self, root, transform, semantic):
         domain_names = os.listdir(root)
-        datasets = []
+        datas = []
         labels = []
         domains = []
         maps = [1, 0, 4, 2, 3]
@@ -239,10 +239,10 @@ class SourceDataset(data.Dataset):
                 labels.append(label)
                 correct += int(maps[gt] == label)
                 total += 1
-            datasets.append(dataset)
+            datas.append(dataset)
             domains += [idx] * len(dataset)
             print(f'Accuracy for {domain}: {correct / total}')
-        return torch.utils.data.ConcatDataset(datasets), torch.LongTensor(labels), domains
+        return torch.utils.data.ConcatDataset(datas), torch.LongTensor(labels), domains
 
     def __getitem__(self, index):
         sample, _ = self.datasets[index]
