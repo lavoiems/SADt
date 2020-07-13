@@ -140,7 +140,6 @@ if __name__ == '__main__':
             else:
                 x_fake = generator(data, s_trg)
             x_concat += [x_fake]
-
     x_concat = torch.cat(x_concat, dim=0)
     results = [None] * len(x_concat)
     print(x_concat[:5].shape, x_concat[N:].shape)
