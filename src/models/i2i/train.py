@@ -244,18 +244,10 @@ def train(args):
     for k, m in models.items():
         print_network(m, k)
 
-    initialize(models, args.reload, args.save_path, args.model_path)
-
     generator = models['generator'].to(args.device)
     mapping_network = models['mapping_network'].to(args.device)
     style_encoder = models['style_encoder'].to(args.device)
     discriminator = models['discriminator'].to(args.device)
-
-    if not args.reload:
-        generator.apply(he_init)
-        mapping_network.apply(he_init)
-        style_encoder.apply(he_init)
-        discriminator.apply(he_init)
 
     generator_ema = models['generator_ema'].to(args.device)
     mapping_network_ema = models['mapping_network_ema'].to(args.device)
@@ -281,6 +273,13 @@ def train(args):
         'optim_discriminator': optim_discriminator,
     }
 
+    generator.apply(he_init)
+    mapping_network.apply(he_init)
+    style_encoder.apply(he_init)
+    discriminator.apply(he_init)
+
+    initialize(models, args.reload, args.save_path, args.model_path)
+
     iterator = iter(train_loader)
     test_iterator = iter(test_loader)
     iteration = infer_iteration(list(models.keys())[0], args.reload, args.model_path, args.save_path)
@@ -292,7 +291,7 @@ def train(args):
         domx = batch[2].to(args.device)
         datay = batch[3].to(args.device)
         domy = batch[4].to(args.device)
-        z1 = torch.randn(args.train_batch_size, args.z_dim)
+        z1 = torch.randn(datax.shape[0], args.z_dim)
         z1 = z1.to(args.device)
 
         ## Train the discriminator
@@ -323,7 +322,6 @@ def train(args):
         reset_grad(optims)
         g_loss2.backward()
         optim_generator.step()
-
 
         moving_average(generator, generator_ema, beta=0.999)
         moving_average(mapping_network, mapping_network_ema, beta=0.999)

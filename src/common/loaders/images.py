@@ -175,7 +175,7 @@ def _make_balanced_sampler(labels):
     return WeightedRandomSampler(weights, len(weights))
 
 
-def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
+def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     crop = transforms.RandomResizedCrop(
         256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
@@ -194,20 +194,69 @@ def cond_visda(root1, root2, train_batch_size, test_batch_size, semantics, nc, d
         normalize,
     ])
 
-    train1 = datasets.ImageFolder(os.path.join(root1, 'train'), transform=train_transform)
-    train2 = datasets.ImageFolder(os.path.join(root2, 'train'), transform=test_transform)
-    test1 = datasets.ImageFolder(os.path.join(root1, 'test'), transform=train_transform)
-    test2 = datasets.ImageFolder(os.path.join(root2, 'test'), transform=test_transform)
-    train = CondDataset(train1, train2, semantics, nc, device)
-    test = CondDataset(test1, test2, semantics, nc, device)
+    #train1 = datasets.ImageFolder(os.path.join(root1, 'train'), transform=train_transform)
+    #train2 = datasets.ImageFolder(os.path.join(root2, 'train'), transform=test_transform)
+    #test1 = datasets.ImageFolder(os.path.join(root1, 'test'), transform=train_transform)
+    #test2 = datasets.ImageFolder(os.path.join(root2, 'test'), transform=test_transform)
+    #train = CondDataset(train1, train2, semantics, nc, device)
+    #test = CondDataset(test1, test2, semantics, nc, device)
 
-    sampler = _make_balanced_sampler(train.labels)
+    train = SourceDataset(os.path.join(root, 'train'), semantics, train_transform)
+    test = SourceDataset(os.path.join(root, 'test'), semantics, test_transform)
+
+    sampler = _make_balanced_sampler(train.targets)
     train_loader = data.DataLoader(train, batch_size=train_batch_size, sampler=sampler,
-                                   num_workers=8, drop_last=True)
+                                   num_workers=8, drop_last=True, pin_memory=True)
     test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
                                   num_workers=8, drop_last=False)
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, nc
+
+
+class SourceDataset(data.Dataset):
+    def __init__(self, root, semantic, transform=None):
+        self.datasets, self.targets, self.domains = self._make_dataset(root, transform, semantic)
+
+        d1 = os.listdir(root)[0]
+        n_labels = len(os.listdir(os.path.join(root, d1)))
+        self.labels_idxs = [torch.nonzero(self.targets == label)[:, 0] for label in range(n_labels)]
+
+    def _make_dataset(self, root, transform, semantic):
+        domain_names = os.listdir(root)
+        datasets = []
+        labels = []
+        domains = []
+        maps = [1, 0, 4, 2, 3]
+        for idx, domain in enumerate(sorted(domain_names)):
+            correct = 0
+            total = 0
+            path = os.path.join(root, domain)
+            dataset = datasets.ImageFolder(path, transform)
+            for data, gt in dataset:
+                data = data.cuda()
+                data = (data.unsqueeze(0)+1)*0.5
+                label = semantic(data).argmax(1)
+                labels.append(label)
+                correct += int(maps[gt] == label)
+                total += 1
+            datasets.append(dataset)
+            domains += [idx] * len(dataset)
+            print(f'Accuracy for {domain}: {correct / total}')
+        return torch.utils.data.ConcatDataset(datasets), torch.LongTensor(labels), domains
+
+    def __getitem__(self, index):
+        sample, _ = self.datasets[index]
+        target = self.targets[index]
+        domain = self.domains[index]
+        idxs = self.labels_idxs[target]
+        idx2 = idxs[random.randint(0, len(idxs)-1)]
+
+        sample2, target2 = self.datasets[idx2]
+        domain2 = self.domains[idx2]
+        return sample, target, domain, sample2, domain2
+
+    def __len__(self):
+        return len(self.datasets)
 
 
 class CondDataset(data.Dataset):

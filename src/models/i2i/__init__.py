@@ -11,8 +11,7 @@ def parse_args(parser):
     parser.add_argument('--da-path', type=str, required=True, help='Path of the pre-trained domain adaptation network (vmtc_repr)')
     parser.add_argument('--ss-path', type=str, default=None, help='Path of the pre-trained self-supervised model')
     parser.add_argument('--da-model', type=str, default='vmtc_repr', help='Name of the domain adaptation model')
-    parser.add_argument('--dataset-loc1', type=str, default='./data/sketch', help='Location of the first dataset')
-    parser.add_argument('--dataset-loc2', type=str, default='./data/real', help='Location of the second dataset')
+    parser.add_argument('--dataset-loc', type=str, default='./data/sketch', help='Location of the datasets')
     parser.add_argument('--dataset', type=str, default='cond_visda', choices=['cond_visda', 'cond_mnist_svhn'], help='Dataset framework for training')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--f_lr', type=float, default=1e-6, help='Learning rate for Mapping Network')
@@ -78,7 +77,7 @@ def execute(args):
     semantics = semantics.to(args.device)
     semantics.eval()
 
-    train_loader, test_loader, shape, _ = dataset(args.dataset_loc1, args.dataset_loc2, args.train_batch_size,
+    train_loader, test_loader, shape, _ = dataset(args.dataset_loc, args.train_batch_size,
                                                   args.test_batch_size, semantics, args.nc,
                                                   args.device)
     args.img_size = shape[1]
