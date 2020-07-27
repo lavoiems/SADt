@@ -10,6 +10,7 @@ from models import udt
 from models import vmtc_repr
 from models import i2i
 from models import i2i_gen_dom
+from models import sg_sem
 
 _models_ = {
     'classifier': classifier,
@@ -19,6 +20,7 @@ _models_ = {
     'vmtc_repr': vmtc_repr,
     'i2i': i2i,
     'i2i_gen_dom': i2i_gen_dom,
+    'sg_sem': sg_sem,
 }
 
 

@@ -29,6 +29,7 @@ def load_last_model(model, model_type, dir):
     names = filter_name(model_type, dir)
     last_name = max(names, key=parse_model_id)
     path = os.path.join(dir, 'model', last_name)
+    print(path)
     model.load_state_dict(torch.load(path, map_location='cpu'))
     return model
 

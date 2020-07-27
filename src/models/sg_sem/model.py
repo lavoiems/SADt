@@ -1,12 +1,12 @@
-#####
-# Model architecture adapted from the orginal repos of StarGAN-v2: https://github.com/clovaai/stargan-v2
-#####
+import copy
 import math
 
+from munch import Munch
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 
 
 class ResBlk(nn.Module):
@@ -108,7 +108,7 @@ class AdainResBlk(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_size=64, bottleneck_blocks=2, **kwargs):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_blocks=2, bottleneck_size=64):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
@@ -119,7 +119,6 @@ class Generator(nn.Module):
             nn.InstanceNorm2d(dim_in, affine=True),
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
-
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
         for _ in range(repeat_num):
@@ -138,19 +137,13 @@ class Generator(nn.Module):
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
 
-    def forward(self, x, s, masks=None):
+    def forward(self, x, s):
         x = self.from_rgb(x)
         cache = {}
         for block in self.encode:
-            if (masks is not None) and (x.size(2) in [32, 64, 128]):
-                cache[x.size(2)] = x
             x = block(x)
         for block in self.decode:
             x = block(x, s)
-            if (masks is not None) and (x.size(2) in [32, 64, 128]):
-                mask = masks[0] if x.size(2) in [32] else masks[1]
-                mask = F.interpolate(mask, size=x.size(2), mode='bilinear')
-                x = x + self.hpf(mask * cache[x.size(2)])
         return self.to_rgb(x)
 
 
@@ -160,11 +153,11 @@ def one_hot_embedding(labels, num_classes):
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self, z_dim=16, style_dim=64, num_domains=2, nc=5, **kwargs):
+    def __init__(self, latent_dim=16, style_dim=64, num_domains=2, nc=5):
         super().__init__()
         self.nc = nc
         layers = []
-        layers += [nn.Linear(z_dim+nc, 512)]
+        layers += [nn.Linear(latent_dim+nc, 512)]
         layers += [nn.ReLU()]
         for _ in range(3):
             layers += [nn.Linear(512, 512)]
@@ -195,7 +188,7 @@ class MappingNetwork(nn.Module):
 
 
 class StyleEncoder(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, nc=5, n_unshared_layers=0, **kwargs):
+    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, nc=5, n_unshared_layers=0):
         super().__init__()
         self.num_domains = num_domains
         dim_in = 2**14 // img_size
@@ -218,7 +211,7 @@ class StyleEncoder(nn.Module):
             unshared = []
             for _ in range(n_unshared_layers):
                 unshared += [nn.Linear(dim_out, dim_out),
-                             nn.LeakyReLU(0.2)]
+                                  nn.LeakyReLU(0.2)]
             unshared += [nn.Linear(dim_out, style_dim)]
             self.unshared += [nn.Sequential(*unshared)]
 
@@ -236,7 +229,7 @@ class StyleEncoder(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512, nc=5, **kwargs):
+    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512, nc=5):
         super().__init__()
         dim_in = 2**14 // img_size
         blocks = []
@@ -273,3 +266,114 @@ class Discriminator(nn.Module):
         idx = torch.LongTensor(range(d.shape[0])).to(d.device)
         out = out[idx, d]
         return out
+
+
+def build_model(args):
+    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size)
+    mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains)
+    style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains)
+    discriminator = Discriminator(args.img_size, args.num_domains)
+    generator_ema = copy.deepcopy(generator)
+    mapping_network_ema = copy.deepcopy(mapping_network)
+    style_encoder_ema = copy.deepcopy(style_encoder)
+
+    nets = Munch(generator=generator,
+                 mapping_network=mapping_network,
+                 style_encoder=style_encoder,
+                 discriminator=discriminator)
+    nets_ema = Munch(generator=generator_ema,
+                     mapping_network=mapping_network_ema,
+                     style_encoder=style_encoder_ema)
+
+    return nets, nets_ema
+
+
+class GaussianLayer(nn.Module):
+    def __init__(self):
+        super(GaussianLayer, self).__init__()
+
+    def forward(self, x):
+        if self.training:
+            return x + torch.randn_like(x)
+        return x
+
+
+class Classifier(nn.Module):
+    def __init__(self, h_dim, nc, z_dim, **kwargs):
+        super(Classifier, self).__init__()
+        self.x = nn.Sequential(nn.Linear(z_dim, h_dim),
+                               nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                               nn.LeakyReLU(0.1, inplace=True),
+                               nn.Linear(h_dim, h_dim),
+                               nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                               nn.LeakyReLU(0.1, inplace=True),
+                               nn.Dropout(0.5),
+                               GaussianLayer(),
+                               nn.Linear(h_dim, h_dim),
+                               nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                               nn.LeakyReLU(0.1, inplace=True),
+                               nn.Linear(h_dim, h_dim),
+                               nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                               nn.LeakyReLU(0.1, inplace=True),
+                               nn.Dropout(0.5),
+                               GaussianLayer())
+
+        self.mlp = nn.Sequential(nn.Linear(h_dim, h_dim),
+                                 nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                                 nn.LeakyReLU(0.1, inplace=True),
+                                 nn.Linear(h_dim, h_dim),
+                                 nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                                 nn.LeakyReLU(0.1, inplace=True),
+                                 nn.Linear(h_dim, h_dim),
+                                 nn.LayerNorm(h_dim, elementwise_affine=False, eps=1e-3),
+                                 nn.LeakyReLU(0.1, inplace=True),
+                                 nn.Linear(h_dim, nc),
+                                 nn.LayerNorm(nc, elementwise_affine=False, eps=1e-3),
+                                 )
+
+    def forward(self, x):
+        o = self.x(x)
+        return self.mlp(o)
+
+
+def ss_model(ss_path):
+    ss = torchvision.models.resnet50()
+    ss.fc = torch.nn.Identity()
+    state_dict = torch.load(ss_path, map_location='cpu')['state_dict']
+    for k in list(state_dict.keys()):
+        # retain only encoder_q up to before the embedding layer
+        if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+            # remove prefix
+            state_dict[k[len("module.encoder_q."):]] = state_dict[k]
+        # delete renamed or unused k
+        del state_dict[k]
+    err = ss.load_state_dict(state_dict, strict=False)
+    print(err)
+    ss.eval()
+    return ss
+
+
+def cluster_model(cluster_path):
+    cluster = Classifier(256, 5, 2048)
+    state_dict = torch.load(cluster_path, map_location='cpu')
+    cluster.load_state_dict(state_dict)
+    cluster.eval()
+    return cluster
+
+
+class Semantics(nn.Module):
+    def __init__(self, ss, cluster):
+        super().__init__()
+        self.ss = ss
+        self.cluster = cluster
+
+    def forward(self, x):
+        o = self.ss(x)
+        o = self.cluster(o)
+        return o
+
+
+def semantics(ss_path, cluster_path):
+    ss = ss_model(ss_path)
+    cluster = cluster_model(cluster_path)
+    return Semantics(ss, cluster)

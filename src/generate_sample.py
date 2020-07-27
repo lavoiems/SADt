@@ -40,17 +40,17 @@ def cluster_model(cluster_path):
 class dataset_single(data.Dataset):
   def __init__(self, dataroot, setname):
     self.dataroot = dataroot
-    categories = os.listdir(os.path.join(self.dataroot, setname, 'test'))
+    categories = os.listdir(os.path.join(self.dataroot, 'test' + setname))
     self.img = []
     for cat in categories:
-        images = os.listdir(os.path.join(self.dataroot, setname, 'test', cat))
-        self.img += [os.path.join(self.dataroot, setname, 'test', cat, x) for x in images]
+        images = os.listdir(os.path.join(self.dataroot, 'test'+setname, cat))
+        self.img += [os.path.join(self.dataroot, 'test' + setname, cat, x) for x in images]
     self.img = list(sorted(self.img))
     self.size = len(self.img)
-    self.input_dim = 3
+    self.input_dim = 3 
 
     # setup image transformation
-    transforms = [Resize((256, 256), 1)]
+    transforms = [Resize((256, 256), 1)] 
     transforms.append(ToTensor())
     transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
     self.transforms = Compose(transforms)
@@ -67,10 +67,45 @@ class dataset_single(data.Dataset):
     if input_dim == 1:
       img = img[0, ...] * 0.299 + img[1, ...] * 0.587 + img[2, ...] * 0.114
       img = img.unsqueeze(0)
-    return img
+    return img 
 
   def __len__(self):
     return self.size
+
+#class dataset_single(data.Dataset):
+#  def __init__(self, dataroot, setname):
+#    self.dataroot = dataroot
+#    categories = os.listdir(os.path.join(self.dataroot, setname, 'test'))
+#    self.img = []
+#    for cat in categories:
+#        images = os.listdir(os.path.join(self.dataroot, setname, 'test', cat))
+#        self.img += [os.path.join(self.dataroot, setname, 'test', cat, x) for x in images]
+#    self.img = list(sorted(self.img))
+#    self.size = len(self.img)
+#    self.input_dim = 3
+#
+#    # setup image transformation
+#    transforms = [Resize((256, 256), 1)]
+#    transforms.append(ToTensor())
+#    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+#    self.transforms = Compose(transforms)
+#    print('%s: %d images'%(setname, self.size))
+#    return
+#
+#  def __getitem__(self, index):
+#    data = self.load_img(self.img[index], self.input_dim)
+#    return data
+#
+#  def load_img(self, img_name, input_dim):
+#    img = Image.open(img_name).convert('RGB')
+#    img = self.transforms(img)
+#    if input_dim == 1:
+#      img = img[0, ...] * 0.299 + img[1, ...] * 0.587 + img[2, ...] * 0.114
+#      img = img.unsqueeze(0)
+#    return img
+#
+#  def __len__(self):
+#    return self.size
 
 
 def save_image(x, ncol, filename):
@@ -106,7 +141,7 @@ if __name__ == '__main__':
     ss = ss_model(args.ss_path).cuda()
     da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch')
+    dataset = dataset_single(args.data_root, 'A' if args.domain else 'B')
     idxs = [0, 15, 35, 50, 60]
     data = []
     for i in range(N):
@@ -135,10 +170,7 @@ if __name__ == '__main__':
             print(z_trg.shape, y_src.shape, d_trg.shape)
             s_trg = mapping(z_trg, y_src, d_trg)
             print(data.shape, s_trg.shape)
-            if args.model == 'i2i_gen_dom':
-                x_fake = generator(data, s_trg, d_trg)
-            else:
-                x_fake = generator(data, s_trg)
+            x_fake = generator(data, s_trg)
             x_concat += [x_fake]
     x_concat = torch.cat(x_concat, dim=0)
     results = [None] * len(x_concat)
