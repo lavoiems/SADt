@@ -55,12 +55,12 @@ Imsat (https://arxiv.org/abs/1605.07146) is a method for clustering using deep n
  for clustering MNIST. We use a slighly different version than the one proposed in the original model. We explain the
  the differences in the appendix on the paper. But, the original imsat algorithm, or any other cluster algorithm which
  can cluster MNIST decently well could be used in place.
- 
+
 **Clustering MNIST**
 ```bash
 python src/main.py --exp-name cluster --cuda --run-id mnist imsat
 ```
- 
+
 ### vmt_cluster
 VMT (https://arxiv.org/abs/1905.04215) is an unsupervised domain adaptation method. In this work, we proposed to replace
 the ground truth labels of the source domain with the learned cluster on the source domain. `vmt_cluster` is a model
@@ -102,7 +102,7 @@ python src/main.py --run-id svhn-mnist --exp-name UDT --test-batch-size 50 --cud
 ```
 
 ### i2i
-For Sketch->Real, we found that using the architecture and the cycle + style losses yielded better results empirically. 
+For Sketch->Real, we found that using the architecture and the cycle + style losses yielded better results empirically.
 Hence, we propose to incorporate semantics in a model which is inspired from StarGAN-v2 (https://github.com/clovaai/stargan-v2).
 
 **Domain translation Sketch-Real**

@@ -194,13 +194,6 @@ def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, *
         normalize,
     ])
 
-    #train1 = datasets.ImageFolder(os.path.join(root1, 'train'), transform=train_transform)
-    #train2 = datasets.ImageFolder(os.path.join(root2, 'train'), transform=test_transform)
-    #test1 = datasets.ImageFolder(os.path.join(root1, 'test'), transform=train_transform)
-    #test2 = datasets.ImageFolder(os.path.join(root2, 'test'), transform=test_transform)
-    #train = CondDataset(train1, train2, semantics, nc, device)
-    #test = CondDataset(test1, test2, semantics, nc, device)
-
     train = SourceDataset(os.path.join(root, 'train'), semantics, train_transform)
     test = SourceDataset(os.path.join(root, 'test'), semantics, test_transform)
 
