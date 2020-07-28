@@ -28,9 +28,8 @@ def execute(args):
     semantics = semantics.to(args.device)
     semantics.eval()
 
-    assert len(subdirs(args.train_img_dir)) == args.num_domains
-    assert len(subdirs(args.val_img_dir)) == args.num_domains
-    src, val, _, _ = cond_visda(root=args.train_img_dir,
+    assert len(subdirs(args.dataset_loc)) == args.num_domains
+    src, val, _, _ = cond_visda(root=args.dataset_loc,
                                 train_batch_size=args.batch_size,
                                 test_batch_size=args.val_batch_size,
                                 semantics=semantics,
@@ -78,15 +77,7 @@ def parse_args(parser):
     parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
 
     # directory for training
-    parser.add_argument('--train_img_dir', type=str, default='data/celeba_hq/train', help='Directory containing training images')
-    parser.add_argument('--val_img_dir', type=str, default='data/celeba_hq/val', help='Directory containing validation images')
-    parser.add_argument('--sample_dir', type=str, default='expr/samples', help='Directory for saving generated images')
-    parser.add_argument('--checkpoint_dir', type=str, default='expr/checkpoints', help='Directory for saving network checkpoints')
-
-    # directory for testing
-    parser.add_argument('--result_dir', type=str, default='expr/results', help='Directory for saving generated images and videos')
-    parser.add_argument('--src_dir', type=str, default='assets', help='Directory containing input source images')
-    parser.add_argument('--out_dir', type=str, default='assets', help='output directory when aligning faces')
+    parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')
 
     # step size
     parser.add_argument('--print_every', type=int, default=1000)

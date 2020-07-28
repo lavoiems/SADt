@@ -1,3 +1,7 @@
+"""
+Code adapted from the StarGAN v2: https://github.com/clovaai/stargan-v2
+"""
+
 import copy
 import math
 

@@ -30,21 +30,18 @@ class Solver(nn.Module):
         for name, module in self.nets_ema.items():
             setattr(self, name + '_ema', module)
 
-        if args.mode == 'train':
-            self.optims = Munch()
-            for net in self.nets.keys():
-                self.optims[net] = torch.optim.Adam(
-                    params=self.nets[net].parameters(),
-                    lr=args.f_lr if net == 'mapping_network' else args.lr,
-                    betas=[args.beta1, args.beta2],
-                    weight_decay=args.weight_decay)
+        self.optims = Munch()
+        for net in self.nets.keys():
+            self.optims[net] = torch.optim.Adam(
+                params=self.nets[net].parameters(),
+                lr=args.f_lr if net == 'mapping_network' else args.lr,
+                betas=[args.beta1, args.beta2],
+                weight_decay=args.weight_decay)
 
-            self.ckptios = [
-                CheckpointIO(ospj(args.checkpoint_dir, '{:06d}_nets.ckpt'), **self.nets),
-                CheckpointIO(ospj(args.checkpoint_dir, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
-                CheckpointIO(ospj(args.checkpoint_dir, '{:06d}_optims.ckpt'), **self.optims)]
-        else:
-            self.ckptios = [CheckpointIO(ospj(args.checkpoint_dir, '{:06d}_nets_ema.ckpt'), **self.nets_ema)]
+        self.ckptios = [
+            CheckpointIO(ospj(args.model_path, '{:06d}_nets.ckpt'), **self.nets),
+            CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
+            CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **self.optims)]
 
         self.to(self.device)
         for name, network in self.named_children():
@@ -138,7 +135,7 @@ class Solver(nn.Module):
 
             # generate images for debugging
             if (i+1) % args.sample_every == 0:
-                os.makedirs(args.sample_dir, exist_ok=True)
+                os.makedirs(args.save_path, exist_ok=True)
                 debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
             # save model checkpoints
@@ -265,7 +262,7 @@ def debug_image(nets, args, inputs, step):
                   for d in range(min(args.num_domains, 5))]
     z_trg_list = torch.randn(args.num_outs_per_domain, 1, args.latent_dim).repeat(1, N, 1).to(device)
     for psi in [1.0]:
-        filename = ospj(args.sample_dir, '%06d_latent_psi_%.1f.jpg' % (step, psi))
+        filename = ospj(args.save_path, '%06d_latent_psi_%.1f.jpg' % (step, psi))
         translate_using_latent(nets, args, x_src, y_src, d_trg_list, z_trg_list, psi, filename)
 
 
@@ -321,10 +318,10 @@ class CheckpointIO(object):
 
 
 class InputFetcher:
-    def __init__(self, loader, device, latent_dim, device):
+    def __init__(self, loader, latent_dim, device):
         self.loader = loader
         self.latent_dim = latent_dim
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = device
 
     def _fetch_inputs(self):
         try:
