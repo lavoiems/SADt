@@ -16,131 +16,119 @@ import torchvision.utils as vutils
 from .model import build_model
 
 
-class Solver(nn.Module):
-    def __init__(self, args):
-        super().__init__()
-        self.args = args
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+def train(args, loaders):
+    args = args
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.nets, self.nets_ema = build_model(args)
-        # below setattrs are to make networks be children of Solver, e.g., for self.to(self.device)
-        for name, module in self.nets.items():
-            print_network(module, name)
-            setattr(self, name, module)
-        for name, module in self.nets_ema.items():
-            setattr(self, name + '_ema', module)
+    nets, nets_ema = build_model(args)
 
-        self.optims = Munch()
-        for net in self.nets.keys():
-            self.optims[net] = torch.optim.Adam(
-                params=self.nets[net].parameters(),
-                lr=args.f_lr if net == 'mapping_network' else args.lr,
-                betas=[args.beta1, args.beta2],
-                weight_decay=args.weight_decay)
+    optims = Munch()
+    for net in nets.keys():
+        optims[net] = torch.optim.Adam(
+            params=nets[net].parameters(),
+            lr=args.f_lr if net == 'mapping_network' else args.lr,
+            betas=[args.beta1, args.beta2],
+            weight_decay=args.weight_decay)
 
-        self.ckptios = [
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets.ckpt'), **self.nets),
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
-            CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **self.optims)]
+    ckptios = [
+        CheckpointIO(ospj(args.model_path, '{:06d}_nets.ckpt'), **nets),
+        CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **nets_ema),
+        CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **optims)]
 
-        self.to(self.device)
-        for name, network in self.named_children():
-            # Do not initialize the EMA parameters
-            if ('ema' not in name):
-                print('Initializing %s...' % name)
-                network.apply(he_init)
+    for network in nets:
+        network = network.to(device)
 
-    def _save_checkpoint(self, step):
-        for ckptio in self.ckptios:
-            ckptio.save(step)
+    for network in nets_ema:
+        network = network.to(device)
 
-    def _load_checkpoint(self, step):
-        for ckptio in self.ckptios:
-            ckptio.load(step)
+    # fetch random validation images for debugging
+    fetcher = InputFetcher(loaders.src, args.latent_dim, args.device)
+    fetcher_val = InputFetcher(loaders.val, args.latent_dim, args.device)
+    inputs_val = next(fetcher_val)
 
-    def _reset_grad(self):
-        for optim in self.optims.values():
-            optim.zero_grad()
+    # resume training if necessary
+    if args.resume_iter > 0:
+        load_checkpoint(ckptios, args.resume_iter)
 
-    def train(self, loaders):
-        args = self.args
-        nets = self.nets
-        nets_ema = self.nets_ema
-        optims = self.optims
+    # remember the initial value of ds weight
+    print('Start training...')
+    start_time = time.time()
+    for i in range(args.resume_iter, args.total_iters):
+        # fetch images and labels
+        inputs = next(fetcher)
+        x_real, y_real, d_org = inputs.x_src, inputs.y_src, inputs.d_src
+        x_trg, d_trg = inputs.x_src2, inputs.d_src2
+        z_trg, z_trg2 = inputs.z_trg, inputs.z_trg2
 
-        # fetch random validation images for debugging
-        fetcher = InputFetcher(loaders.src, args.latent_dim, args.device)
-        fetcher_val = InputFetcher(loaders.val, args.latent_dim, args.device)
-        inputs_val = next(fetcher_val)
+        # train the discriminator
+        d_loss, d_losses_latent = compute_d_loss(
+            nets, args, x_real, y_real, d_org, d_trg, z_trg=z_trg)
+        reset_grad(optims)
+        d_loss.backward()
+        optims.discriminator.step()
 
-        # resume training if necessary
-        if args.resume_iter > 0:
-            self._load_checkpoint(args.resume_iter)
+        d_loss, d_losses_ref = compute_d_loss(
+            nets, args, x_real, y_real, d_org, d_trg, x_trg=x_trg)
+        reset_grad(optims)
+        d_loss.backward()
+        optims.discriminator.step()
 
-        # remember the initial value of ds weight
-        print('Start training...')
-        start_time = time.time()
-        for i in range(args.resume_iter, args.total_iters):
-            # fetch images and labels
-            inputs = next(fetcher)
-            x_real, y_real, d_org = inputs.x_src, inputs.y_src, inputs.d_src
-            x_trg, d_trg = inputs.x_src2, inputs.d_src2
-            z_trg, z_trg2 = inputs.z_trg, inputs.z_trg2
+        # train the generator
+        g_loss, g_losses_latent = compute_g_loss(
+            nets, args, x_real, y_real, d_org, d_trg, z_trgs=[z_trg, z_trg2])
+        reset_grad(optims)
+        g_loss.backward()
+        optims.generator.step()
+        optims.mapping_network.step()
+        optims.style_encoder.step()
 
-            # train the discriminator
-            d_loss, d_losses_latent = compute_d_loss(
-                nets, args, x_real, y_real, d_org, d_trg, z_trg=z_trg)
-            self._reset_grad()
-            d_loss.backward()
-            optims.discriminator.step()
+        g_loss, g_losses_ref = compute_g_loss(
+            nets, args, x_real, y_real, d_org, d_trg, x_ref=x_trg)
+        reset_grad(optims)
+        g_loss.backward()
+        optims.generator.step()
 
-            d_loss, d_losses_ref = compute_d_loss(
-                nets, args, x_real, y_real, d_org, d_trg, x_trg=x_trg)
-            self._reset_grad()
-            d_loss.backward()
-            optims.discriminator.step()
+        # compute moving average of network parameters
+        moving_average(nets.generator, nets_ema.generator, beta=0.999)
+        moving_average(nets.mapping_network, nets_ema.mapping_network, beta=0.999)
+        moving_average(nets.style_encoder, nets_ema.style_encoder, beta=0.999)
 
-            # train the generator
-            g_loss, g_losses_latent = compute_g_loss(
-                nets, args, x_real, y_real, d_org, d_trg, z_trgs=[z_trg, z_trg2])
-            self._reset_grad()
-            g_loss.backward()
-            optims.generator.step()
-            optims.mapping_network.step()
-            optims.style_encoder.step()
+        # print out log info
+        if (i+1) % args.print_every == 0:
+            elapsed = time.time() - start_time
+            elapsed = str(datetime.timedelta(seconds=elapsed))[:-7]
+            log = "Elapsed time [%s], Iteration [%i/%i], " % (elapsed, i+1, args.total_iters)
+            all_losses = dict()
+            for loss, prefix in zip([d_losses_latent, d_losses_ref, g_losses_latent, g_losses_ref],
+                                    ['D/latent_', 'D/ref_', 'G/latent_', 'G/ref_']):
+                for key, value in loss.items():
+                    all_losses[prefix + key] = value
+            log += ' '.join(['%s: [%.4f]' % (key, value) for key, value in all_losses.items()])
+            print(log)
 
-            g_loss, g_losses_ref = compute_g_loss(
-                nets, args, x_real, y_real, d_org, d_trg, x_ref=x_trg)
-            self._reset_grad()
-            g_loss.backward()
-            optims.generator.step()
+        # generate images for debugging
+        if (i+1) % args.sample_every == 0:
+            os.makedirs(args.save_path, exist_ok=True)
+            debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
-            # compute moving average of network parameters
-            moving_average(nets.generator, nets_ema.generator, beta=0.999)
-            moving_average(nets.mapping_network, nets_ema.mapping_network, beta=0.999)
-            moving_average(nets.style_encoder, nets_ema.style_encoder, beta=0.999)
+        # save model checkpoints
+        if (i+1) % args.save_every == 0:
+            save_checkpoint(ckptios, step=i+1)
 
-            # print out log info
-            if (i+1) % args.print_every == 0:
-                elapsed = time.time() - start_time
-                elapsed = str(datetime.timedelta(seconds=elapsed))[:-7]
-                log = "Elapsed time [%s], Iteration [%i/%i], " % (elapsed, i+1, args.total_iters)
-                all_losses = dict()
-                for loss, prefix in zip([d_losses_latent, d_losses_ref, g_losses_latent, g_losses_ref],
-                                        ['D/latent_', 'D/ref_', 'G/latent_', 'G/ref_']):
-                    for key, value in loss.items():
-                        all_losses[prefix + key] = value
-                log += ' '.join(['%s: [%.4f]' % (key, value) for key, value in all_losses.items()])
-                print(log)
 
-            # generate images for debugging
-            if (i+1) % args.sample_every == 0:
-                os.makedirs(args.save_path, exist_ok=True)
-                debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
+def save_checkpoint(ckptios, step):
+    for ckptio in ckptios:
+        ckptio.save(step)
 
-            # save model checkpoints
-            if (i+1) % args.save_every == 0:
-                self._save_checkpoint(step=i+1)
+
+def load_checkpoint(ckptios, step):
+    for ckptio in ckptios:
+        ckptio.load(step)
+
+
+def reset_grad(optims):
+    for optim in optims.values():
+        optim.zero_grad()
 
 
 def compute_d_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_trg=None):
@@ -269,7 +257,6 @@ def debug_image(nets, args, inputs, step):
 @torch.no_grad()
 def translate_using_latent(nets, args, x_src, y_src, d_trg_list, z_trg_list, psi, filename):
     N, C, H, W = x_src.size()
-    latent_dim = z_trg_list[0].size(1)
     x_concat = [x_src]
 
     for i, d_trg in enumerate(d_trg_list):

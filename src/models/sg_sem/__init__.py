@@ -14,33 +14,6 @@ from .train import Solver
 from common.loaders.images import cond_visda
 from . import model
 
-
-def subdirs(dname):
-    return [d for d in os.listdir(dname)
-            if os.path.isdir(os.path.join(dname, d))]
-
-
-def execute(args):
-    print(args)
-
-    solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_path)
-    semantics = semantics.to(args.device)
-    semantics.eval()
-
-    assert len(subdirs(args.dataset_loc)) == args.num_domains
-    src, val, _, _ = cond_visda(root=args.dataset_loc,
-                                train_batch_size=args.batch_size,
-                                test_batch_size=args.val_batch_size,
-                                semantics=semantics,
-                                nc=args.num_classes,
-                                device=args.device)
-    loaders = Munch(src=src,
-                    ref=None,
-                    val=val)
-    solver.train(loaders)
-
-
 def parse_args(parser):
     # model arguments
     parser.add_argument('--img_size', type=int, default=256, help='Image resolution')
@@ -63,8 +36,6 @@ def parse_args(parser):
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
     parser.add_argument('--total_iters', type=int, default=100000, help='Number of total iterations')
     parser.add_argument('--resume_iter', type=int, default=0, help='Iterations to resume training/testing')
-    parser.add_argument('--batch_size', type=int, default=8, help='Batch size for training')
-    parser.add_argument('--val_batch_size', type=int, default=32, help='Batch size for validation')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate for D, E and G')
     parser.add_argument('--f_lr', type=float, default=1e-6, help='Learning rate for F')
     parser.add_argument('--beta1', type=float, default=0.0, help='Decay rate for 1st moment of Adam')
@@ -83,3 +54,31 @@ def parse_args(parser):
     parser.add_argument('--print_every', type=int, default=1000)
     parser.add_argument('--sample_every', type=int, default=5000)
     parser.add_argument('--save_every', type=int, default=10000)
+
+
+def subdirs(dname):
+    return [d for d in os.listdir(dname)
+            if os.path.isdir(os.path.join(dname, d))]
+
+
+def execute(args):
+    print(args)
+
+    solver = Solver(args)
+    semantics = model.semantics(args.ss_path, args.cluster_path)
+    semantics = semantics.to(args.device)
+    semantics.eval()
+
+    assert len(subdirs(args.dataset_loc)) == args.num_domains
+    src, val, _, _ = cond_visda(root=args.dataset_loc,
+                                train_batch_size=args.train_batch_size,
+                                test_batch_size=args.test_batch_size,
+                                semantics=semantics,
+                                nc=args.num_classes,
+                                device=args.device)
+    loaders = Munch(src=src,
+                    ref=None,
+                    val=val)
+    solver.train(loaders)
+
+

@@ -143,7 +143,6 @@ class Generator(nn.Module):
 
     def forward(self, x, s):
         x = self.from_rgb(x)
-        cache = {}
         for block in self.encode:
             x = block(x)
         for block in self.decode:
