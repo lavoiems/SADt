@@ -1,18 +1,14 @@
 """
 Code adapted from the StarGAN v2 repository: https://github.com/clovaai/stargan-v2
 """
-
-import time
 import os
-import argparse
 
 from munch import Munch
-from torch.backends import cudnn
-import torch
 
-from .train import Solver
+from .train import train
 from common.loaders.images import cond_visda
 from . import model
+
 
 def parse_args(parser):
     # model arguments
@@ -64,7 +60,6 @@ def subdirs(dname):
 def execute(args):
     print(args)
 
-    solver = Solver(args)
     semantics = model.semantics(args.ss_path, args.cluster_path)
     semantics = semantics.to(args.device)
     semantics.eval()
@@ -79,6 +74,4 @@ def execute(args):
     loaders = Munch(src=src,
                     ref=None,
                     val=val)
-    solver.train(loaders)
-
-
+    train(args, loaders)
