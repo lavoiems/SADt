@@ -5,9 +5,35 @@ import os
 
 from munch import Munch
 
-from .train import train
+from .train import Solver
 from common.loaders.images import cond_visda
 from . import model
+
+
+def subdirs(dname):
+    return [d for d in os.listdir(dname)
+            if os.path.isdir(os.path.join(dname, d))]
+
+
+def execute(args):
+    print(args)
+
+    solver = Solver(args)
+    semantics = model.semantics(args.ss_path, args.cluster_path)
+    semantics = semantics.to(args.device)
+    semantics.eval()
+
+    assert len(subdirs(args.dataset_loc)) == args.num_domains
+    src, val, _, _ = cond_visda(root=args.dataset_loc,
+                                train_batch_size=args.train_batch_size,
+                                test_batch_size=args.test_batch_size,
+                                semantics=semantics,
+                                nc=args.num_classes,
+                                device=args.device)
+    loaders = Munch(src=src,
+                    ref=None,
+                    val=val)
+    solver.train(loaders)
 
 
 def parse_args(parser):
@@ -51,27 +77,3 @@ def parse_args(parser):
     parser.add_argument('--sample_every', type=int, default=5000)
     parser.add_argument('--save_every', type=int, default=10000)
 
-
-def subdirs(dname):
-    return [d for d in os.listdir(dname)
-            if os.path.isdir(os.path.join(dname, d))]
-
-
-def execute(args):
-    print(args)
-
-    semantics = model.semantics(args.ss_path, args.cluster_path)
-    semantics = semantics.to(args.device)
-    semantics.eval()
-
-    assert len(subdirs(args.dataset_loc)) == args.num_domains
-    src, val, _, _ = cond_visda(root=args.dataset_loc,
-                                train_batch_size=args.train_batch_size,
-                                test_batch_size=args.test_batch_size,
-                                semantics=semantics,
-                                nc=args.num_classes,
-                                device=args.device)
-    loaders = Munch(src=src,
-                    ref=None,
-                    val=val)
-    train(args, loaders)
