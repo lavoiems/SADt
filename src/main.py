@@ -9,6 +9,7 @@ from models import vmt_cluster
 from models import udt
 from models import vmtc_repr
 from models import sg_sem
+from models import sg_sem_imp
 
 _models_ = {
     'classifier': classifier,
@@ -17,6 +18,7 @@ _models_ = {
     'udt': udt,
     'vmtc_repr': vmtc_repr,
     'sg_sem': sg_sem,
+    'sg_sem_imp': sg_sem_imp,
 }
 
 
