@@ -1,8 +1,8 @@
 import torch
 from PIL import Image
 import os
-from models.sg_sem_imp.model import Generator, MappingNetwork, ss_model, cluster_model
-#from models.sg_sem.model import Generator, MappingNetwork, ss_model, cluster_model
+#from models.sg_sem_imp.model import Generator, MappingNetwork, ss_model, cluster_model
+from models.sg_sem.model import Generator, MappingNetwork, ss_model, cluster_model
 import sys
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
 from torchvision.datasets import ImageFolder
@@ -101,8 +101,8 @@ if __name__ == '__main__':
             print(z_trg.shape, y_src.shape, d_trg.shape)
             s_trg = mapping(z_trg, y_src, d_trg)
             print(data.shape, s_trg.shape)
-            x_fake = generator(data, s_trg, d_trg)
-            #x_fake = generator(data, s_trg)
+            #x_fake = generator(data, s_trg, d_trg)
+            x_fake = generator(data, s_trg)
             x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)

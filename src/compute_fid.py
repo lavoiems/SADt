@@ -77,7 +77,7 @@ def save_image(x, ncol, filename):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, help='Path of the model directory')
+    parser.add_argument('--model-path', type=str, help='Path of the model')
     parser.add_argument('--model', type=str, help='Model name')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
@@ -91,20 +91,29 @@ if __name__ == '__main__':
     d1_nsamples = 3175
     batch_size = 128
     # Load model
-    model_definition = import_module('.'.join(('models', args.model, 'train')))
-    model_parameters = get_args(args.model_path)
-    models = model_definition.define_models(**model_parameters)
-    generator = models['generator_ema']
-    generator = load_last_model(generator, 'generator_ema', args.model_path).to(device)
-    mapping = models['mapping_network_ema']
-    mapping = load_last_model(mapping, 'mapping_network_ema', args.model_path).to(device)
+    state_dict = torch.load(args.model_path, map_location='cpu')
+    model_definition = import_module('.'.join(('models', args.model, 'model')))
+
+    generator = model_definition.Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
+    generator.load_state_dict(state_dict['generator'])
+    mapping = model_definition.MappingNetwork()
+    mapping.load_state_dict(state_dict['mapping_network'])
+    mapping.to(device)
+
+    #model_definition = import_module('.'.join(('models', args.model, 'train')))
+    #model_parameters = get_args(args.model_path)
+    #models = model_definition.define_models(**model_parameters)
+    #generator = models['generator_ema']
+    #generator = load_last_model(generator, 'generator_ema', args.model_path).to(device)
+    #mapping = models['mapping_network_ema']
+    #mapping = load_last_model(mapping, 'mapping_network_ema', args.model_path).to(device)
 
     ss = ss_model(args.ss_path).cuda()
     da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch', args.category)
-    src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
     dataset = dataset_single(args.data_root, 'sketch' if args.domain else 'real', args.category)
+    src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
+    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch', args.category)
     trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
@@ -118,7 +127,8 @@ if __name__ == '__main__':
             for i in range(10):
                 z_trg = torch.randn(data.shape[0], latent_dim, device=device)
                 s_trg = mapping(z_trg, y_trg, d_trg)
-                gen = generator(data, s_trg, masks=None)
+                gen = generator(data, s_trg, d_trg)
+                #gen = generator(data, s_trg)
                 generated.append(gen)
         generated = torch.cat(generated)
         save_image(generated[:4], 4, 'Debug.png')
