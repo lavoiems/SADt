@@ -154,8 +154,8 @@ def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
 
     train_transform = transforms.Compose(train_transform)
     test_transform = transforms.Compose(test_transform)
-    train = datasets.ImageFolder(os.path.join(root, 'train'), transform=train_transform)
-    test = datasets.ImageFolder(os.path.join(root, 'test'), transform=test_transform)
+    train = SourceDataset(os.path.join(root, 'train'), None, train_transform)
+    test = SourceDataset(os.path.join(root, 'test'), None, test_transform)
 
     train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, pin_memory=False,
                                                shuffle=shuffle, num_workers=10, drop_last=True)
@@ -206,7 +206,7 @@ def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, *
 
 
 class SourceDataset(data.Dataset):
-    def __init__(self, root, semantic, transform=None):
+    def __init__(self, root, semantic=None, transform=None):
         self.datasets, self.targets, self.domains = self._make_dataset(root, transform, semantic)
 
         d1 = os.listdir(root)[0]
@@ -224,16 +224,19 @@ class SourceDataset(data.Dataset):
             total = 0
             path = os.path.join(root, domain)
             dataset = datasets.ImageFolder(path, transform)
-            for data, gt in dataset:
-                data = data.cuda()
-                data = (data.unsqueeze(0)+1)*0.5
-                label = semantic(data).argmax(1)
-                labels.append(label)
-                correct += int(maps[gt] == label)
-                total += 1
+            if semantic:
+                for data, gt in dataset:
+                    data = data.cuda()
+                    data = (data.unsqueeze(0)+1)*0.5
+                    label = semantic(data).argmax(1)
+                    labels.append(label)
+                    correct += int(maps[gt] == label)
+                    total += 1
+                print(f'Accuracy for {domain}: {correct / total}')
+            else:
+                labels += [0] * len(dataset)
             datas.append(dataset)
             domains += [idx] * len(dataset)
-            print(f'Accuracy for {domain}: {correct / total}')
         return torch.utils.data.ConcatDataset(datas), torch.LongTensor(labels), domains
 
     def __getitem__(self, index):
