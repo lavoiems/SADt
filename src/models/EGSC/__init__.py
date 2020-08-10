@@ -6,7 +6,7 @@ import os
 from munch import Munch
 
 from .train import Solver
-from common.loaders.images import visda
+from common.loaders.images import visda, mnist_svhn
 from . import model
 
 
@@ -21,11 +21,16 @@ def execute(args):
     solver = Solver(args)
 
     assert len(subdirs(args.dataset_loc)) == args.num_domains
-    src, val, _, _ = visda(root=args.dataset_loc,
-                           train_batch_size=args.train_batch_size,
-                           test_batch_size=args.test_batch_size,
-                           nc=args.num_classes,
-                           device=args.device)
+    if args.dataset == 'visda':
+        src, val, _, _ = visda(root=args.dataset_loc,
+                               train_batch_size=args.train_batch_size,
+                               test_batch_size=args.test_batch_size)
+    elif args.dataset == 'mnist_svhn':
+        src, val, _, _ = mnist_svhn(root=args.dataset_loc,
+                                    train_batch_size=args.train_batch_size,
+                                    test_batch_size=args.test_batch_size)
+    else:
+        print(f'Unsupported dataset: {args.dataset}')
     loaders = Munch(src=src,
                     ref=None,
                     val=val)
@@ -44,6 +49,7 @@ def parse_args(parser):
     parser.add_argument('--bottleneck_size', type=int, default=64, help='Spatial dimension of the bottleneck of the generator')
     parser.add_argument('--bottleneck_blocks', type=int, default=2, help='Number of bottleneck block of the generator')
     parser.add_argument('--max_conv_dim', type=int, default=512, help='Maximum number of dim')
+    parser.add_argument('--dataset', type=str, default='visda', help='Dataset name')
 
     # weight for objective functions
     parser.add_argument('--lambda_reg', type=float, default=1, help='Weight for R1 regularization')

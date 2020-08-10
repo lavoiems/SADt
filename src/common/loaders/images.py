@@ -132,6 +132,30 @@ def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, 
     return train_loader, test_loader, shape, nc
 
 
+def mnist_svhn(root, train_batch_size, test_batch_size, **kwargs):
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    transform = transforms.Compose([
+        transforms.Resize(32, interpolation=0),
+        transforms.ToTensor(),
+        triple_channel,
+        normalize,
+    ])
+
+    train1 = datasets.MNIST(root, train=True, download=True, transform=transform)
+    train2 = datasets.SVHN(root, split='train', download=True, transform=transform)
+    train = CondDataset(train1, train2)
+    test1 = datasets.MNIST(root, train=False, download=True, transform=transform)
+    test2 = datasets.SVHN(root, split='test', download=True, transform=transform)
+    test = CondDataset(test1, test2)
+
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
+                                   num_workers=10, drop_last=True, pin_memory=False)
+    test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
+                                  num_workers=10, drop_last=False)
+    shape = train_loader.dataset[0][0].shape
+    return train_loader, test_loader, shape, None
+
+
 def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
     crop = transforms.RandomResizedCrop(
         256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
@@ -254,25 +278,29 @@ class SourceDataset(data.Dataset):
 
 
 class CondDataset(data.Dataset):
-    def __init__(self, dataset1, dataset2, semantics, nc, device):
+    def __init__(self, dataset1, dataset2, semantics=None, nc=10, device='cuda'):
         labels = []
-        print('Infering semantics for dataset1')
-        for sample, _ in dataset1:
-            sample = sample.to(device)
-            sample = (sample.unsqueeze(0)+1)*0.5
-            label = semantics(sample).argmax(1)
-            labels.append(label)
-        print('Infering semantics for dataset2')
-        for sample, _ in dataset2:
-            sample = sample.to(device)
-            sample = (sample.unsqueeze(0)+1)*0.5
-            label = semantics(sample).argmax(1)
-            labels.append(label)
-
-        self.labels = torch.LongTensor(labels)
-        self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]
         self.domains = [0]*len(dataset1) + [1]*len(dataset2)
         self.dataset = data.ConcatDataset((dataset1, dataset2))
+        if semantics:
+            print('Infering semantics for dataset1')
+            for sample, _ in dataset1:
+                sample = sample.to(device)
+                sample = (sample.unsqueeze(0)+1)*0.5
+                label = semantics(sample).argmax(1)
+                labels.append(label)
+            print('Infering semantics for dataset2')
+            for sample, _ in dataset2:
+                sample = sample.to(device)
+                sample = (sample.unsqueeze(0)+1)*0.5
+                label = semantics(sample).argmax(1)
+                labels.append(label)
+
+            self.labels = torch.LongTensor(labels)
+            self.labels_idxs = [torch.nonzero(self.labels == label)[:, 0] for label in range(nc)]
+        else:
+            self.labels = torch.LongTensor([0]*len(self.domains))
+            self.labels_idxs = [torch.arange(len(self.labels))]
 
     def __getitem__(self, idx):
         sample, _ = self.dataset[idx]
