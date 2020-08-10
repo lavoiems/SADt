@@ -101,20 +101,28 @@ python src/main.py --run-id mnist-svhn --exp-name UDT --test-batch-size 50 --cud
 python src/main.py --run-id svhn-mnist --exp-name UDT --test-batch-size 50 --cuda udt --eval-model-path ./experiments/classifier/classifier_mnist-None/ --dataset1 svhn --dataset2 mnist --semantic-model-path ./experiments/vmt_cluster/vmt-cluster_mnist-svhn-None --gsxy 0.5
 ```
 
-### i2i
+
+#### Fetch the results
+For this set of experiments, we use tensorboard for saving the artefacts.
+It is possible to view the results by simply invoking tensorboard
+in the folder where the results were saved
+```
+tensorboard --logdir .
+```
+
+
+### sg_sem
 For Sketch->Real, we found that using the architecture and the cycle + style losses yielded better results empirically.
 Hence, we propose to incorporate semantics in a model which is inspired from StarGAN-v2 (https://github.com/clovaai/stargan-v2).
 
 **Domain translation Sketch-Real**
 ```bash
-python src/main.py --cuda --exp-name sg_sem --run-id sketch_real --train-batch-size 8 --test-batcg-size 32  sg_sem --num_domains 2 --lambda_reg 1 --lambda_sty 1 --lambda_cyc 1 --dataset_loc ../stargan-sem/data --ss_path /network/tmp1/lavoiems/moco_v2_800ep_pretrain.pth.tar --cluster_path /home/mila/l/lavoiems/playground/SPUDT/experiments/vmtc_repr/vmtc-repr_sketch-real-None/model/classifier:100000 --bottleneck_size 64 --bottleneck_blocks 4
+python src/main.py --cuda --exp-name sg_sem --run-id sketch_real --train-batch-size 8 --test-batcg-size 32  sg_sem --num_domains 2 --lambda_reg 1 --lambda_sty 1 --lambda_cyc 1 --dataset_loc data --ss_path moco_v2_800ep_pretrain.pth.tar --cluster_path experiments/vmtc_repr/vmtc-repr_sketch-real-None/model/classifier:100000 --bottleneck_size 64 --bottleneck_blocks 2
 ```
+One can similarly run the `sg_sem` script with `MNIST<->SVHN`.
 
-## Visualizing the results
-We use tensorboard for saving the artefacts. It is possible to view the results by simply invoking tensorboard in the folder where the results were saved
-```
-tensorboard --logdir .
-```
+#### Fetch the results
+To fetch results, use the script `fetch_results.py`, provided. Similarly, one can compute the FID using the script `compute_fid.py`.
 
 
 ## Results

@@ -132,13 +132,13 @@ def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, 
     return train_loader, test_loader, shape, nc
 
 
-def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=False, **kwargs):
-    #crop = transforms.RandomResizedCrop(
-    #    256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
-    #rand_crop = transforms.Lambda(
-    #    lambda x: crop(x) if random.random() < 0.5 else x)
+def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
+    crop = transforms.RandomResizedCrop(
+        256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
+    rand_crop = transforms.Lambda(
+        lambda x: crop(x) if random.random() < 0.5 else x)
     train_transform = [
-        #rand_crop,
+        rand_crop,
         transforms.Resize((256, 256), interpolation=1),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
@@ -148,10 +148,9 @@ def visda(root, train_batch_size, test_batch_size, use_normalize=False, shuffle=
         transforms.ToTensor(),
     ]
 
-    if use_normalize:
-        normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
-        train_transform.append(normalize)
-        test_transform.append(normalize)
+    normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
+    train_transform.append(normalize)
+    test_transform.append(normalize)
 
     train_transform = transforms.Compose(train_transform)
     test_transform = transforms.Compose(test_transform)

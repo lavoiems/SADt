@@ -10,6 +10,7 @@ from models import udt
 from models import vmtc_repr
 from models import sg_sem
 from models import sg_sem_imp
+from models import EGSC
 
 _models_ = {
     'classifier': classifier,
@@ -19,6 +20,7 @@ _models_ = {
     'vmtc_repr': vmtc_repr,
     'sg_sem': sg_sem,
     'sg_sem_imp': sg_sem_imp,
+    'EGSC': EGSC,
 }
 
 

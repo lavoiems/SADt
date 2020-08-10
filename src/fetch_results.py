@@ -1,3 +1,4 @@
+import argparse
 import torch
 from PIL import Image
 import os
@@ -5,7 +6,6 @@ import os
 from models.sg_sem.model import Generator, MappingNetwork, ss_model, cluster_model
 import sys
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
-from torchvision.datasets import ImageFolder
 from torch.utils import data
 import torchvision.utils as vutils
 
@@ -53,7 +53,22 @@ def save_image(x, ncol, filename):
 
 
 if __name__ == '__main__':
-    state_dict_path, data_root, name, domain, ss_path, da_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
+    parser.add_argument('--data-root', type=str, help='Path to the data')
+    parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
+    parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
+    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
+    parser.add_argument('--save-name', type=str, help='Name of the sample file')
+    args = parser.parse_args()
+
+    state_dict_path = args.state_dict_path
+    data_root = args.data_root
+    domain = args.domain
+    ss_path = args.ss_path
+    da_path = args.da_path
+    name = args.save_name
+
     device = 'cuda'
     N = 5
     latent_dim = 16
@@ -65,7 +80,7 @@ if __name__ == '__main__':
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
-    mapping.to(device)#.eval()
+    mapping.to(device)
 
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
@@ -101,15 +116,11 @@ if __name__ == '__main__':
             print(z_trg.shape, y_src.shape, d_trg.shape)
             s_trg = mapping(z_trg, y_src, d_trg)
             print(data.shape, s_trg.shape)
-            #x_fake = generator(data, s_trg, d_trg)
             x_fake = generator(data, s_trg)
             x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
     results = [None] * len(x_concat)
-    #results[::2] = x_concat[:N]
-    #results[1::2] = x_concat[N:]
-    #results = torch.stack(results)
     print(x_concat[:5].shape, x_concat[N:].shape)
     results = torch.cat([x_concat[:5], x_concat[N:]])
-    save_image(results, 5, f'samples_name:{name}_domain:{domain}.png')
+    save_image(results, 5, f'{name}.png')
