@@ -163,8 +163,7 @@ def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
                                               num_workers=10, drop_last=False)
 
     shape = train_loader.dataset[0][0].shape
-    n_classes = len(set(train.classes))
-    return train_loader, test_loader, shape, n_classes
+    return train_loader, test_loader, shape, 1
 
 
 def _make_balanced_sampler(labels):
