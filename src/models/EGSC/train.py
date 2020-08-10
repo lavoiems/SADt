@@ -298,7 +298,7 @@ def compute_g_loss(nets, vgg, args, x_real, d_org, d_trg, x_ref):
     features_fake = vgg(x_fake)
     loss_vgg = torch.mean(torch.abs(features_real - features_fake))
     loss_gram = torch.mean(torch.abs(gram_matrix(features_real) - gram_matrix(features_fake)))
-    loss_vae = torch.mean(s_trg)
+    loss_vae = torch.mean(s_trg**2)
 
     # cycle-consistency loss
     s_org = nets.style_encoder(x_real, d_org)
