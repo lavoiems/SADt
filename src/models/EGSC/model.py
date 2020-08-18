@@ -141,10 +141,11 @@ class Generator(nn.Module):
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
 
-    def forward(self, x, s):
+    def forward(self, x, f, s):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
+        x = x*f
         for block in self.decode:
             x = block(x, s)
         return self.to_rgb(x)

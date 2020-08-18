@@ -44,16 +44,18 @@ class Solver(nn.Module):
             CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
             CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **self.optims)]
 
-        self.vgg = vgg19(pretrained=True)
-        self.vgg.eval()
-        self.vgg = self.vgg.to(self.device)
-
-        self.to(self.device)
         for name, network in self.named_children():
             # Do not initialize the EMA parameters
             if ('ema' not in name):
                 print('Initializing %s...' % name)
                 network.apply(he_init)
+
+        self.vgg = vgg19(pretrained=True).features[:8]
+        #self.vgg = vgg19(pretrained=True).features[:29]
+        self.vgg.eval()
+        self.vgg = self.vgg.to(self.device)
+
+        self.to(self.device)
 
     def _save_checkpoint(self, step):
         for ckptio in self.ckptios:
@@ -90,16 +92,17 @@ class Solver(nn.Module):
             inputs = next(fetcher)
             x_real, d_org = inputs.x_src, inputs.d_src
             x_trg, d_trg = inputs.x_src2, inputs.d_src2
+            features_real = self.vgg(x_real)
 
             # train the discriminator
             d_loss, d_losses_ref = compute_d_loss(
-                nets, args, x_real, d_org, d_trg, x_trg=x_trg)
+                nets, args, x_real, features_real, d_org, d_trg, x_trg=x_trg)
             self._reset_grad()
             d_loss.backward()
             optims.discriminator.step()
 
             g_loss, g_losses_ref = compute_g_loss(
-                nets, self.vgg, args, x_real, d_org, d_trg, x_ref=x_trg)
+                nets, self.vgg, args, x_real, features_real, d_org, d_trg, x_ref=x_trg)
             self._reset_grad()
             g_loss.backward()
             optims.generator.step()
@@ -107,7 +110,6 @@ class Solver(nn.Module):
 
             # compute moving average of network parameters
             moving_average(nets.generator, nets_ema.generator, beta=0.999)
-            moving_average(nets.mapping_network, nets_ema.mapping_network, beta=0.999)
             moving_average(nets.style_encoder, nets_ema.style_encoder, beta=0.999)
 
             # print out log info
@@ -124,9 +126,9 @@ class Solver(nn.Module):
                 print(log)
 
             # generate images for debugging
-            if (i+1) % args.sample_every == 0:
-                os.makedirs(args.save_path, exist_ok=True)
-                debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
+            #if (i+1) % args.sample_every == 0:
+            #    os.makedirs(args.save_path, exist_ok=True)
+            #    debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
             # save model checkpoints
             if (i+1) % args.save_every == 0:
@@ -248,7 +250,7 @@ class Solver(nn.Module):
 #        optim.zero_grad()
 
 
-def compute_d_loss(nets, args, x_real, d_org, d_trg, x_trg):
+def compute_d_loss(nets, args, x_real, features_real, d_org, d_trg, x_trg):
     # with real images
     x_real.requires_grad_()
     out = nets.discriminator(x_real, d_org)
@@ -258,7 +260,7 @@ def compute_d_loss(nets, args, x_real, d_org, d_trg, x_trg):
     # with fake images
     with torch.no_grad():
         s_trg = nets.style_encoder(x_trg, d_trg)
-        x_fake = nets.generator(x_real, s_trg)
+        x_fake = nets.generator(x_real, features_real, s_trg)
     out = nets.discriminator(x_fake, d_trg)
     loss_fake = adv_loss(out, 0)
 
@@ -281,13 +283,11 @@ def gram_matrix(inputs):
     return G.div(a * b * c * d)
 
 
-def compute_g_loss(nets, vgg, args, x_real, d_org, d_trg, x_ref):
+def compute_g_loss(nets, vgg, args, x_real, features_real, d_org, d_trg, x_ref):
     # adversarial loss
     s_trg = nets.style_encoder(x_ref, d_trg)
 
-    features_real = vgg(x_real)
-
-    x_fake = nets.generator(x_real*features_real, s_trg)
+    x_fake = nets.generator(x_real, features_real, s_trg)
     out = nets.discriminator(x_fake, d_trg)
     loss_adv = adv_loss(out, 1)
 
@@ -302,11 +302,11 @@ def compute_g_loss(nets, vgg, args, x_real, d_org, d_trg, x_ref):
 
     # cycle-consistency loss
     s_org = nets.style_encoder(x_real, d_org)
-    x_rec = nets.generator(x_fake, s_org)
+    x_rec = nets.generator(x_fake, features_fake, s_org)
     loss_cyc = torch.mean(torch.abs(x_rec - x_real))
 
     loss = loss_adv + args.lambda_cyc * loss_cyc \
-    + loss_vgg + loss_gram + loss_vae
+    + 0.1*loss_vgg + 0.1*loss_gram + loss_vae
     #+ args.lambda_sty * loss_sty \
 
     return loss, Munch(adv=loss_adv.item(),
@@ -435,19 +435,16 @@ class InputFetcher:
 
     def _fetch_inputs(self):
         try:
-            x, y, d, x2, d2 = next(self.iter)
+            x, _, d, x2, d2 = next(self.iter)
         except (AttributeError, StopIteration):
             self.iter = iter(self.loader)
-            x, y, d, x2, d2 = next(self.iter)
-        return x, y, d, x2, d2
+            x, _, d, x2, d2 = next(self.iter)
+        return x, d, x2, d2
 
     def __next__(self):
-        x, y, d, x2, d2 = self._fetch_inputs()
-        z_trg = torch.randn(x.size(0), self.latent_dim)
-        z_trg2 = torch.randn(x.size(0), self.latent_dim)
-        inputs = Munch(x_src=x, y_src=y, x_src2=x2,
-                       d_src2=d2, d_src=d,
-                       z_trg=z_trg, z_trg2=z_trg2)
+        x, d, x2, d2 = self._fetch_inputs()
+        inputs = Munch(x_src=x, x_src2=x2,
+                       d_src2=d2, d_src=d)
 
         return Munch({k: v.to(self.device)
                       for k, v in inputs.items()})

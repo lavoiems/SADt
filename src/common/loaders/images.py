@@ -24,7 +24,7 @@ def svhn(root, train_batch_size, test_batch_size, valid_split=0, **kwargs):
                                                sampler=train_sampler, num_workers=8, drop_last=True)
     valid_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
                                                sampler=valid_sampler, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, num_workers=8)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, num_workers=8, shuffle=True)
 
     shape = train_loader.dataset[0][0].shape
 
@@ -78,7 +78,7 @@ def mnist(root, train_batch_size, test_batch_size, valid_split=0, **kwargs):
                                                sampler=train_sampler, num_workers=8, drop_last=True)
     valid_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size,
                                                sampler=valid_sampler, num_workers=8)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, num_workers=8)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=True, num_workers=8)
 
     shape = train_loader.dataset[0][0].shape
     n_classes = len(set(train.train_labels.tolist()))
