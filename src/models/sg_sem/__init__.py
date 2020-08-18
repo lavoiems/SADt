@@ -53,6 +53,8 @@ def parse_args(parser):
     parser.add_argument('--lambda_reg', type=float, default=1, help='Weight for R1 regularization')
     parser.add_argument('--lambda_cyc', type=float, default=1, help='Weight for cyclic consistency loss')
     parser.add_argument('--lambda_sty', type=float, default=1, help='Weight for style reconstruction loss')
+    parser.add_argument('--lambda_ds', type=float, default=2, help='Weight for diversity sensitivity loss')
+    parser.add_argument('--lambda_class', type=float, default=1, help='Weight for classification loss')
 
     # training arguments
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
