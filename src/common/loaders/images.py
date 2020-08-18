@@ -271,7 +271,13 @@ class SourceDataset(data.Dataset):
 
         sample2, target2 = self.datasets[idx2]
         domain2 = self.domains[idx2]
-        return sample, target, domain, sample2, domain2
+
+        idx_domain = self.domains == domain2
+        idxs_ds = idxs and idx_domain
+        idx_ds = idxs_ds[random.randint(0, len(idxs_ds)-1)]
+        sample_ds, _ = self.datasets[idx_ds]
+
+        return sample, target, sample_ds, domain, sample2, domain2
 
     def __len__(self):
         return len(self.datasets)
