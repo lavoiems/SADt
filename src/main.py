@@ -8,6 +8,7 @@ from models import imsat
 from models import vmt_cluster
 from models import udt
 from models import vmtc_repr
+from models import sg
 from models import sg_sem
 from models import sg_sem_imp
 from models import EGSC
@@ -18,6 +19,7 @@ _models_ = {
     'vmt_cluster': vmt_cluster,
     'udt': udt,
     'vmtc_repr': vmtc_repr,
+    'sg': sg,
     'sg_sem': sg_sem,
     'sg_sem_imp': sg_sem_imp,
     'EGSC': EGSC,

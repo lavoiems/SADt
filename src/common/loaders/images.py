@@ -272,12 +272,12 @@ class SourceDataset(data.Dataset):
         sample2, target2 = self.datasets[idx2]
         domain2 = self.domains[idx2]
 
-        idx_domain = self.domains == domain2
-        idxs_ds = idxs and idx_domain
+        idx_domain = torch.nonzero(torch.LongTensor(self.domains) == domain2, as_tuple=True)[0]
+        idxs_ds = list(set(idxs.tolist()) & set(idx_domain.tolist()))
         idx_ds = idxs_ds[random.randint(0, len(idxs_ds)-1)]
         sample_ds, _ = self.datasets[idx_ds]
 
-        return sample, target, sample_ds, domain, sample2, domain2
+        return sample, target, domain, sample2, sample_ds, domain2
 
     def __len__(self):
         return len(self.datasets)
