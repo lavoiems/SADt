@@ -6,7 +6,7 @@ import os
 from munch import Munch
 
 from .train import Solver
-from common.loaders.images import cond_visda
+from common.loaders import images
 from . import model
 
 
@@ -19,16 +19,12 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_path)
-    semantics = semantics.to(args.device)
-    semantics.eval()
 
-    src, val, _, _ = cond_visda(root=args.dataset_loc,
-                                train_batch_size=args.train_batch_size,
-                                test_batch_size=args.test_batch_size,
-                                semantics=semantics,
-                                nc=args.num_classes,
-                                device=args.device)
+    dataset = getattr(images, args.dataset)
+    src, val, _, _ = dataset(root=args.dataset_loc,
+                             train_batch_size=args.train_batch_size,
+                             test_batch_size=args.test_batch_size,
+                             device=args.device)
     loaders = Munch(src=src,
                     ref=None,
                     val=val)
@@ -53,7 +49,6 @@ def parse_args(parser):
     parser.add_argument('--lambda_cyc', type=float, default=1, help='Weight for cyclic consistency loss')
     parser.add_argument('--lambda_sty', type=float, default=1, help='Weight for style reconstruction loss')
     parser.add_argument('--lambda_ds', type=float, default=2, help='Weight for diversity sensitivity loss')
-    parser.add_argument('--lambda_class', type=float, default=1, help='Weight for classification loss')
 
     # training arguments
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
@@ -67,8 +62,6 @@ def parse_args(parser):
     parser.add_argument('--num_outs_per_domain', type=int, default=10, help='Number of generated images per domain during sampling')
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
-    parser.add_argument('--cluster_path', type=str, default='.', help='Path to cluster model')
-    parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
 
     # directory for training
     parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')

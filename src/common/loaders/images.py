@@ -157,6 +157,7 @@ def mnist_svhn(root, train_batch_size, test_batch_size, **kwargs):
 
 
 def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
+    normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
     crop = transforms.RandomResizedCrop(
         256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
     rand_crop = transforms.Lambda(
@@ -166,15 +167,13 @@ def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
         transforms.Resize((256, 256), interpolation=1),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
+        normalize,
     ]
     test_transform = [
         transforms.Resize((256, 256), interpolation=1),
         transforms.ToTensor(),
+        normalize,
     ]
-
-    normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
-    train_transform.append(normalize)
-    test_transform.append(normalize)
 
     train_transform = transforms.Compose(train_transform)
     test_transform = transforms.Compose(test_transform)
@@ -188,13 +187,6 @@ def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
 
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, 1
-
-
-def _make_balanced_sampler(labels):
-    class_counts = np.bincount(labels)
-    class_weights = 1. / class_counts
-    weights = class_weights[labels]
-    return WeightedRandomSampler(weights, len(weights))
 
 
 def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
@@ -219,8 +211,7 @@ def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, *
     train = SourceDataset(os.path.join(root, 'train'), semantics, train_transform)
     test = SourceDataset(os.path.join(root, 'test'), semantics, test_transform)
 
-    sampler = _make_balanced_sampler(train.targets)
-    train_loader = data.DataLoader(train, batch_size=train_batch_size, sampler=sampler,
+    train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
                                    num_workers=8, drop_last=True, pin_memory=True)
     test_loader = data.DataLoader(test, batch_size=test_batch_size, shuffle=True,
                                   num_workers=8, drop_last=False)
@@ -317,7 +308,12 @@ class CondDataset(data.Dataset):
 
         sample2, _ = self.dataset[idx2]
         domain2 = self.domains[idx2]
-        return sample, target, domain, sample2, domain2
+
+        idx_domain = torch.nonzero(torch.LongTensor(self.domains) == domain2, as_tuple=True)[0]
+        idxs_ds = list(set(idxs.tolist()) & set(idx_domain.tolist()))
+        idx_ds = idxs_ds[random.randint(0, len(idxs_ds)-1)]
+        sample_ds, _ = self.datasets[idx_ds]
+        return sample, target, domain, sample2, sample_ds, domain2
 
     def __len__(self):
         return len(self.dataset)
