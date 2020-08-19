@@ -71,7 +71,8 @@ def parse_args(parser):
     parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
 
     # directory for training
-    parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')
+    parser.add_argument('--dataset', type=str, default='cond_visda', help='Which dataset to use [cond_visda, cond_mnist_svhn]')
+    parser.add_argument('--dataset_loc', type=str, default='./data', help='Directory containing datasets')
 
     # step size
     parser.add_argument('--print_every', type=int, default=1000)

@@ -64,7 +64,8 @@ def parse_args(parser):
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
 
     # directory for training
-    parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')
+    parser.add_argument('--dataset', type=str, default='visda', help='Which dataset to use [visda, mnist_svhn]')
+    parser.add_argument('--dataset_loc', type=str, default='./data', help='Directory containing datasets')
 
     # step size
     parser.add_argument('--print_every', type=int, default=1000)
