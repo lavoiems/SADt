@@ -5,9 +5,9 @@ FOLDER=data
 if [[ $1  =~ ^(sketch|real)$ ]];
 then
     echo "Downloading data"
-    #wget http://csr.bu.edu/ftp/visda/2019/multi-source/$1.zip
-    #mkdir $FOLDER
-    #mv $1.zip $FOLDER
+    wget http://csr.bu.edu/ftp/visda/2019/multi-source/$1.zip
+    mkdir $FOLDER
+    mv $1.zip $FOLDER
     cd $FOLDER
     unzip $1.zip "$1/bird/*"
     unzip $1.zip "$1/dog/*"

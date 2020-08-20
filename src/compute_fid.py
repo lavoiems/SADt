@@ -131,5 +131,7 @@ if __name__ == '__main__':
         trg_data = torch.cat(trg_data)
         print(trg_data.shape)
 
+        trg_data = (trg_data + 1) / 2
+        generated = (generated + 1) / 2
         fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {fid}')
