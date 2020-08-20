@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 import torch
+import torchvision.utils as vutils
+import math
 
 
 def set_paths(args):
@@ -35,6 +37,16 @@ def get_args_dict(args):
     args_dict = {k: v for k, v in vars(args).items()
                  if type(v).__name__ in builtin}
     return args_dict
+
+
+def normalize(x):
+    x = (x + 1) / 2
+    x.clamp_(0, 1)
+
+
+def save_image(x, filename):
+    ncol = int(math.sqrt(len(x)))
+    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
 
 
 def normalize_channels(image, concat=np.concatenate):

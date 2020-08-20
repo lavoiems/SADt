@@ -1,11 +1,10 @@
-import time
 import os
 import random
 import torch.utils.data as data
 import numpy as np
 import torch
 from torchvision import datasets, transforms
-from torch.utils.data.sampler import WeightedRandomSampler
+from PIL import Image
 from torch.utils.data.sampler import SubsetRandomSampler
 
 
@@ -217,6 +216,38 @@ def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, *
                                   num_workers=8, drop_last=False)
     shape = train_loader.dataset[0][0].shape
     return train_loader, test_loader, shape, nc
+
+
+class dataset_single(data.Dataset):
+    def __init__(self, dataroot, setname, category):
+        self.dataroot = dataroot
+        images = os.listdir(os.path.join(self.dataroot, setname, 'fid', category))
+        self.img = [os.path.join(self.dataroot, setname, 'fid', category, x) for x in images]
+        self.img = list(sorted(self.img))
+        self.size = len(self.img)
+        self.input_dim = 3
+
+        # setup image transformation
+        transform = [transforms.Resize((256, 256), 1)]
+        transform.append(transforms.ToTensor())
+        transform.append(transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
+        self.transforms = transforms.Compose(transform)
+        print('%s: %d images'%(setname, self.size))
+
+    def __getitem__(self, index):
+        data = self.load_img(self.img[index], self.input_dim)
+        return data
+
+    def load_img(self, img_name, input_dim):
+        img = Image.open(img_name).convert('RGB')
+        img = self.transforms(img)
+        if input_dim == 1:
+            img = img[0, ...] * 0.299 + img[1, ...] * 0.587 + img[2, ...] * 0.114
+            img = img.unsqueeze(0)
+        return img
+
+    def __len__(self):
+        return len(self.img)
 
 
 class SourceDataset(data.Dataset):

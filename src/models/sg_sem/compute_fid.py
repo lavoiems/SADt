@@ -1,14 +1,12 @@
 from importlib import import_module
 import torch
-from PIL import Image
-import os
 from models.vmtc_repr.model import Classifier
 import argparse
 import torchvision
-from torchvision.transforms import Resize, Normalize, ToTensor, Compose
 from torch.utils import data
-import torchvision.utils as vutils
 from evaluation import fid
+from common.util import save_image, normalize
+from common.loaders.images import dataset_single
 
 
 def ss_model(ss_path):
@@ -34,44 +32,6 @@ def cluster_model(cluster_path):
     cluster.load_state_dict(state_dict)
     cluster.eval()
     return cluster
-
-
-class dataset_single(data.Dataset):
-  def __init__(self, dataroot, setname, category):
-    self.dataroot = dataroot
-    images = os.listdir(os.path.join(self.dataroot, setname, 'fid', category))
-    self.img = [os.path.join(self.dataroot, setname, 'fid', category, x) for x in images]
-    self.img = list(sorted(self.img))
-    self.size = len(self.img)
-    self.input_dim = 3
-
-    # setup image transformation
-    transforms = [Resize((256, 256), 1)]
-    transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
-    self.transforms = Compose(transforms)
-    print('%s: %d images'%(setname, self.size))
-
-  def __getitem__(self, index):
-    data = self.load_img(self.img[index], self.input_dim)
-    return data
-
-  def load_img(self, img_name, input_dim):
-    img = Image.open(img_name).convert('RGB')
-    img = self.transforms(img)
-    if input_dim == 1:
-      img = img[0, ...] * 0.299 + img[1, ...] * 0.587 + img[2, ...] * 0.114
-      img = img.unsqueeze(0)
-    return img
-
-  def __len__(self):
-      return len(self.img)
-
-
-def save_image(x, ncol, filename):
-    x = (x + 1) / 2
-    x.clamp_(0, 1)
-    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
 
 
 if __name__ == '__main__':
@@ -121,7 +81,8 @@ if __name__ == '__main__':
                 gen = generator(data, s_trg)
                 generated.append(gen)
         generated = torch.cat(generated)
-        save_image(generated[:4], 4, 'Debug.png')
+        generated = normalize(generated)
+        save_image(generated[:4], 'Debug.png')
 
         print('Fetching target data')
         trg_data = []
@@ -131,7 +92,6 @@ if __name__ == '__main__':
         trg_data = torch.cat(trg_data)
         print(trg_data.shape)
 
-        trg_data = (trg_data + 1) / 2
-        generated = (generated + 1) / 2
+        trg_data = normalize(trg_data)
         fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {fid}')
