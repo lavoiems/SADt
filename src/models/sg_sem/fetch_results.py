@@ -2,8 +2,7 @@ import argparse
 import torch
 from PIL import Image
 import os
-#from models.sg_sem_imp.model import Generator, MappingNetwork, ss_model, cluster_model
-from models.sg_sem.model import Generator, MappingNetwork, ss_model, cluster_model
+from model import Generator, MappingNetwork, ss_model, cluster_model
 import sys
 from torchvision.transforms import Resize, Normalize, ToTensor, Compose
 from torch.utils import data
