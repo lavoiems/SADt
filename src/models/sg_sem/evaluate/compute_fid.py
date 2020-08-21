@@ -90,5 +90,5 @@ def execute(args):
         print(trg_data.shape)
 
         trg_data = normalize(trg_data)
-        fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
-    print(f'FID: {fid}')
+        computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
+    print(f'FID: {computed_fid}')
