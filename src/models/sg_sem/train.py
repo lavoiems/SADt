@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import torchvision.utils as vutils
 
 from .model import build_model
+from common.initialize import infer_iteration
 
 
 class Solver(nn.Module):
@@ -74,13 +75,14 @@ class Solver(nn.Module):
         inputs_val = next(fetcher_val)
 
         # resume training if necessary
+        resume_iter = infer_iteration(['nets'], args.reload, args.model_path, args.save_path)
         if args.resume_iter > 0:
-            self._load_checkpoint(args.resume_iter)
+            self._load_checkpoint(resume_iter)
 
         # remember the initial value of ds weight
         print('Start training...')
         start_time = time.time()
-        for i in range(args.resume_iter, args.total_iters):
+        for i in range(resume_iter, args.total_iters):
             lambda_ds = args.lambda_ds * (1 - i / args.total_iters)
             # fetch images and labels
             inputs = next(fetcher)
