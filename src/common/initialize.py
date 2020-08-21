@@ -44,7 +44,7 @@ def sort_name(names):
 
 
 def parse_model_id(path):
-    return int(path.split(':')[-1])
+    return int(path.split(':')[-1].split('.')[0])
 
 
 def filter_name(name, dir):
