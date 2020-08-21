@@ -42,9 +42,6 @@ def get_args_dict(args):
 def normalize(x):
     x.clamp_(-1, 1)
     x = (x + 1) / 2
-    #x.clamp_(0, 1)
-    #x -= x.min()
-    #x /= x.max()
     return x
 
 

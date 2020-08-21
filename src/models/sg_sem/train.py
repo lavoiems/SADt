@@ -40,9 +40,9 @@ class Solver(nn.Module):
                 weight_decay=args.weight_decay)
 
         self.ckptios = [
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets.ckpt'), **self.nets),
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
-            CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **self.optims)]
+            CheckpointIO(ospj(args.model_path, 'nets:{:06d}.ckpt'), **self.nets),
+            CheckpointIO(ospj(args.model_path, 'nets_ema:{:06d}.ckpt'), **self.nets_ema),
+            CheckpointIO(ospj(args.model_path, 'optims:{:06d}.ckpt'), **self.optims)]
 
         self.to(self.device)
         for name, network in self.named_children():
