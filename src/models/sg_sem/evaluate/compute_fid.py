@@ -1,12 +1,11 @@
-from importlib import import_module
 import torch
 from models.vmtc_repr.model import Classifier
-import argparse
+from ..model import Generator, MappingNetwork, ss_model, cluster_model
 import torchvision
 from torch.utils import data
-from evaluation import fid
 from common.util import save_image, normalize
 from common.loaders.images import dataset_single
+from common.evaluation import fid
 
 
 def ss_model(ss_path):
@@ -34,8 +33,7 @@ def cluster_model(cluster_path):
     return cluster
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+def parse_args(parser):
     parser.add_argument('--model-path', type=str, help='Path of the model')
     parser.add_argument('--model', type=str, help='Model name', default='sg_sem')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
@@ -43,19 +41,18 @@ if __name__ == '__main__':
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--data-root', type=str, help='Path of the data')
     parser.add_argument('--category', type=str, help='Category of FID to compute')
-    args = parser.parse_args()
 
+
+def execute(args):
     device = 'cuda'
     latent_dim = 16
-    d1_nsamples = 3175
     batch_size = 128
     # Load model
     state_dict = torch.load(args.model_path, map_location='cpu')
-    model_definition = import_module('.'.join(('models', args.model, 'model')))
 
-    generator = model_definition.Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = model_definition.MappingNetwork()
+    mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 

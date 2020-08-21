@@ -1,30 +1,14 @@
+from importlib import import_module
 import time
+import os
 import argparse
 import torch
 import numpy as np
 from common.util import set_paths, create_paths, dump_args
-from models import classifier
-from models import imsat
-from models import vmt_cluster
-from models import udt
-from models import vmtc_repr
-from models import sg
-from models import sg_sem
-from models import EGSC
-
-_models_ = {
-    'classifier': classifier,
-    'imsat': imsat,
-    'vmt_cluster': vmt_cluster,
-    'udt': udt,
-    'vmtc_repr': vmtc_repr,
-    'sg': sg,
-    'sg_sem': sg_sem,
-    'EGSC': EGSC,
-}
+import models
 
 
-def parse_args():
+def parse_args(_models_):
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp-name', default='test', help='Name of the experiment')
     parser.add_argument('--run-id', type=str, default=str(time.time()))
@@ -44,15 +28,22 @@ def parse_args():
     subparsers = parser.add_subparsers(dest='model')
     subparsers.required = True
     for name, model in _models_.items():
+        if not hasattr(model, 'parse_args') and not hasattr(model, 'execute'):
+            continue
         model_parser = subparsers.add_parser(name)
         model.parse_args(model_parser)
         model_parser.set_defaults(func=model.execute)
-        model_parser.set_defaults(model=name)
     return parser.parse_args()
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    root = os.path.dirname(os.path.realpath(__file__))
+    models_root = os.path.join(root, 'models')
+    models_path = [os.path.join(root, f) for f in os.listdir(models_root)]
+    models_path = [m for m in models_path if not os.path.isfile(m)]
+    models_name = [p.split('/')[-1] for p in models_path]
+    _models_ = {name: import_module('.'.join(('models', name))) for name in models_name}
+    args = parse_args(_models_)
     if args.seed:
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)

@@ -1,48 +1,7 @@
-import argparse
 import torch
-from PIL import Image
-import os
-from model import Generator, MappingNetwork, ss_model, cluster_model
-import sys
-from torchvision.transforms import Resize, Normalize, ToTensor, Compose
-from torch.utils import data
+from ..model import Generator, MappingNetwork, ss_model, cluster_model
 import torchvision.utils as vutils
-
-
-class dataset_single(data.Dataset):
-  def __init__(self, dataroot, setname):
-    self.dataroot = dataroot
-    categories = os.listdir(os.path.join(self.dataroot, 'test' + setname))
-    self.img = []
-    for cat in categories:
-        images = os.listdir(os.path.join(self.dataroot, 'test'+setname, cat))
-        self.img += [os.path.join(self.dataroot, 'test' + setname, cat, x) for x in images]
-    self.img = list(sorted(self.img))
-    self.size = len(self.img)
-    self.input_dim = 3
-
-    # setup image transformation
-    transforms = [Resize((256, 256), 1)]
-    transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]))
-    self.transforms = Compose(transforms)
-    print('%s: %d images'%(setname, self.size))
-    return
-
-  def __getitem__(self, index):
-    data = self.load_img(self.img[index], self.input_dim)
-    return data
-
-  def load_img(self, img_name, input_dim):
-    img = Image.open(img_name).convert('RGB')
-    img = self.transforms(img)
-    if input_dim == 1:
-      img = img[0, ...] * 0.299 + img[1, ...] * 0.587 + img[2, ...] * 0.114
-      img = img.unsqueeze(0)
-    return img
-
-  def __len__(self):
-    return self.size
+from common.loaders.images import dataset_single
 
 
 def save_image(x, ncol, filename):
@@ -51,16 +10,16 @@ def save_image(x, ncol, filename):
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
     parser.add_argument('--data-root', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
-    args = parser.parse_args()
 
+
+def execute(args):
     state_dict_path = args.state_dict_path
     data_root = args.data_root
     domain = args.domain
@@ -72,7 +31,6 @@ if __name__ == '__main__':
     N = 5
     latent_dim = 16
     domain = int(domain)
-    d1_nsamples = 3175
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
     generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
@@ -106,7 +64,6 @@ if __name__ == '__main__':
     print(z_trg_list.shape, data.shape, y_src.shape)
 
     N, C, H, W = data.size()
-    latent_dim = z_trg_list[0].size(1)
     x_concat = [data]
 
     for i, d_trg in enumerate(d_trg_list):
@@ -119,7 +76,6 @@ if __name__ == '__main__':
             x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
-    results = [None] * len(x_concat)
     print(x_concat[:5].shape, x_concat[N:].shape)
     results = torch.cat([x_concat[:5], x_concat[N:]])
     save_image(results, 5, f'{name}.png')
