@@ -22,6 +22,8 @@ class Solver(nn.Module):
         super().__init__()
         self.args = args
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        resume_iter = infer_iteration('nets', args.reload, args.model_path, args.save_path)
+        print(resume_iter)
 
         self.nets, self.nets_ema = build_model(args)
         # below setattrs are to make networks be children of Solver, e.g., for self.to(self.device)
@@ -75,7 +77,8 @@ class Solver(nn.Module):
         inputs_val = next(fetcher_val)
 
         # resume training if necessary
-        resume_iter = infer_iteration(['nets'], args.reload, args.model_path, args.save_path)
+        resume_iter = infer_iteration('nets', args.reload, args.model_path, args.save_path)
+        print(resume_iter)
         if args.resume_iter > 0:
             self._load_checkpoint(resume_iter)
 

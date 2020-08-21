@@ -16,7 +16,7 @@ def infer_iteration(name, reload, model_path, save_path):
     resume = reload and has_models(model_path)
     if not resume:
         return 0
-    names = filter_name(name, save_path)
+    names = list(filter_name(name, save_path))
     epochs = map(parse_model_id, names)
     return max(epochs) + 1
 
