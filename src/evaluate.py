@@ -33,3 +33,4 @@ if __name__ == '__main__':
     models_name = [p.split('/')[-1] for p in models_path]
     _models_ = {name: import_module('.'.join(('models', name))) for name in models_name}
     args = parse_args(_models_)
+    args.func(args)
