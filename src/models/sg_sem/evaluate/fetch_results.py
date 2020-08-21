@@ -1,3 +1,4 @@
+import os
 import torch
 from ..model import Generator, MappingNetwork, ss_model, cluster_model
 import torchvision.utils as vutils
@@ -42,7 +43,7 @@ def execute(args):
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
 
-    dataset = dataset_single(data_root, 'B' if domain else 'A')
+    dataset = dataset_single(os.path.join(data_root, 'sketch' if domain else 'real', 'all'))
     idxs = [0, 15, 31, 50, 60]
     data = []
     for i in range(N):

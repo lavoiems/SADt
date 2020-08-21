@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import optim
 
 from common.util import sample, save_models
-from evaluation.fid import calculate_fid
+#from evaluation.fid import calculate_fid
 from common.initialize import initialize, infer_iteration
 from . import model
 

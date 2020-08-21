@@ -54,10 +54,15 @@ then
     cp $1/tiger/* fid/$1/all
     cp $1/tiger/* fid/$1/tiger
 
+    ls $1/bird/      | head -15 | xargs -i cp $1/bird/{}      test/$1/all
     ls $1/bird/      | head -15 | xargs -i mv $1/bird/{}      test/$1/bird
+    ls $1/dog/       | head -15 | xargs -i cp $1/dog/{}       test/$1/all
     ls $1/dog/       | head -15 | xargs -i mv $1/dog/{}       test/$1/dog
+    ls $1/flower/    | head -15 | xargs -i cp $1/flower/{}    test/$1/all
     ls $1/flower/    | head -15 | xargs -i mv $1/flower/{}    test/$1/flower
+    ls $1/speedboat/ | head -15 | xargs -i cp $1/speedboat/{} test/$1/all
     ls $1/speedboat/ | head -15 | xargs -i mv $1/speedboat/{} test/$1/speedboat
+    ls $1/tiger/     | head -15 | xargs -i cp $1/tiger/{}     test/$1/all
     ls $1/tiger/     | head -15 | xargs -i mv $1/tiger/{}     test/$1/tiger
 
     ls $1/bird/      | xargs -i mv $1/bird/{}      train/$1/bird

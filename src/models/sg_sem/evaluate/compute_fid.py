@@ -1,3 +1,4 @@
+import os
 import torch
 from models.vmtc_repr.model import Classifier
 from ..model import Generator, MappingNetwork, ss_model, cluster_model
@@ -34,8 +35,7 @@ def cluster_model(cluster_path):
 
 
 def parse_args(parser):
-    parser.add_argument('--model-path', type=str, help='Path of the model')
-    parser.add_argument('--model', type=str, help='Model name', default='sg_sem')
+    parser.add_argument('--state-dict-path', type=str, help='Path of the model')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -48,7 +48,7 @@ def execute(args):
     latent_dim = 16
     batch_size = 128
     # Load model
-    state_dict = torch.load(args.model_path, map_location='cpu')
+    state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
     generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
@@ -59,9 +59,9 @@ def execute(args):
     ss = ss_model(args.ss_path).cuda()
     da = cluster_model(args.da_path).cuda()
 
-    dataset = dataset_single(args.data_root, 'sketch' if args.domain else 'real', args.category)
+    dataset = dataset_single(os.path.join(args.data_root, 'real' if args.domain else 'sketch', args.category))
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    dataset = dataset_single(args.data_root, 'real' if args.domain else 'sketch', args.category)
+    dataset = dataset_single(os.path.join(args.data_root, 'sketch' if args.domain else 'real', args.category))
     trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
@@ -90,5 +90,6 @@ def execute(args):
         print(trg_data.shape)
 
         trg_data = normalize(trg_data)
+        print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
         computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {computed_fid}')
