@@ -6,7 +6,7 @@ import os
 from munch import Munch
 
 from .train import Solver
-from common.loaders.images import cond_visda
+from common.loaders import images
 from . import model
 
 
@@ -23,12 +23,13 @@ def execute(args):
     semantics = semantics.to(args.device)
     semantics.eval()
 
-    src, val, _, _ = cond_visda(root=args.dataset_loc,
-                                train_batch_size=args.train_batch_size,
-                                test_batch_size=args.test_batch_size,
-                                semantics=semantics,
-                                nc=args.num_classes,
-                                device=args.device)
+    dataset = getattr(images, args.dataset)
+    src, val, _, _ = dataset(root=args.dataset_loc,
+                            train_batch_size=args.train_batch_size,
+                            test_batch_size=args.test_batch_size,
+                            semantics=semantics,
+                            nc=args.num_classes,
+                            device=args.device)
     loaders = Munch(src=src,
                     ref=None,
                     val=val)
