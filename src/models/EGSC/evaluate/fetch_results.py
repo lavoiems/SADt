@@ -2,7 +2,7 @@ import os
 import torch
 from ..model import Generator, StyleEncoder
 import torchvision.utils as vutils
-from common.loaders.images import dataset_single
+from common.loaders import images
 from torchvision.models import vgg19
 
 
@@ -15,7 +15,10 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--data-root', type=str, help='Path to the data')
+    parser.add_argument('--data-root-src', type=str, help='Path to the data')
+    parser.add_argument('--data-root-tgt', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset')
+    parser.add_argument('--dataset-trg', type=str, default='dataset_single', help='name of the dataset')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
@@ -26,7 +29,8 @@ def parse_args(parser):
 @torch.no_grad()
 def execute(args):
     state_dict_path = args.state_dict_path
-    data_root = args.data_root
+    data_root_src = args.data_root_src
+    data_root_tgt = args.data_root_tgt
     domain = args.domain
     name = args.save_name
 
@@ -43,13 +47,17 @@ def execute(args):
     feature_blocks = 29 if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
-    dataset = dataset_single(os.path.join(data_root, 'sketch' if domain else 'real'))
-    trg_dataset = dataset_single(os.path.join(data_root, 'real' if domain else 'sketch'))
+    dataset = getattr(images, args.dataset_src)
+    src_dataset = dataset(data_root_src)
+    dataset = getattr(images, args.dataset_trg)
+    trg_dataset = dataset(data_root_tgt)
+
+    # This is for sketch-real
     idxs = [0, 15, 31, 50, 60]
     data = []
     for i in range(N):
         idx = idxs[i]
-        data.append(dataset[idx])
+        data.append(src_dataset[idx])
     data = torch.stack(data).to(device)
 
     # Infer translated images
