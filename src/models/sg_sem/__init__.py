@@ -68,6 +68,7 @@ def parse_args(parser):
     parser.add_argument('--num_outs_per_domain', type=int, default=10, help='Number of generated images per domain during sampling')
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
+    parser.add_argument('--cluster_type', type=str, default='vmtc_repr', help='Model type for cluster [vmtc_repr, vmt_cluster]')
     parser.add_argument('--cluster_path', type=str, default='.', help='Path to cluster model')
     parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
 
