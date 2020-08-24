@@ -377,10 +377,10 @@ class Semantics(nn.Module):
         return o
 
 
-def semantics(ss_path, cluster_type, cluster_path):
+def semantics(ss_path, cluster_type, cluster_path, **kwargs):
     if ss_path:
         ss = ss_model(ss_path)
-        cluster = define_last_model(cluster_type, cluster_path, 'classifier')
+        cluster = define_last_model(cluster_type, cluster_path, 'classifier', **kwargs)
         return Semantics(ss, cluster)
     else:
-        return define_last_model(cluster_type, cluster_path, 'classifier')
+        return define_last_model(cluster_type, cluster_path, 'classifier', **kwargs)
