@@ -22,6 +22,7 @@ def parse_args(parser):
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
+    parser.add_argument('--max-conv-dim', type=int, default=128)
     parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
     parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
 
@@ -39,9 +40,9 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     generator.load_state_dict(state_dict['generator'])
-    style_encoder = StyleEncoder(img_size=args.img_size).to(device)
+    style_encoder = StyleEncoder(img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     style_encoder.load_state_dict(state_dict['style_encoder'])
 
     feature_blocks = 29 if args.img_size == 256 else 8
