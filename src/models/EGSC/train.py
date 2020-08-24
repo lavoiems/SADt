@@ -306,7 +306,7 @@ def compute_g_loss(nets, vgg, args, x_real, features_real, d_org, d_trg, x_ref):
     loss_cyc = torch.mean(torch.abs(x_rec - x_real))
 
     loss = loss_adv + args.lambda_cyc * loss_cyc \
-    + 0.05*loss_vgg + 0.05*loss_gram + 0.1*loss_vae
+    + args.lambda_vgg*loss_vgg + args.lambda_gram*loss_gram + args.lambda_vae*loss_vae
 
     return loss, Munch(adv=loss_adv.item(),
                        vgg=loss_vgg.item(),
