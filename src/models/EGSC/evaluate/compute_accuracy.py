@@ -8,7 +8,7 @@ from common.initialize import define_last_model
 
 
 @torch.no_grad()
-def evaluate(loader, trg_dataset, domain, style_encoder, generator, classifier, device):
+def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classifier, device):
     correct = 0
     total = 0
 
@@ -22,7 +22,8 @@ def evaluate(loader, trg_dataset, domain, style_encoder, generator, classifier, 
         data = data*2 - 1
 
         s = style_encoder(x_trg, d_trg)
-        gen = generator(data, s)
+        f = vgg(data)
+        gen = generator(data, f, s)
         pred = F.softmax(classifier(gen), 1).argmax(1)
         correct += (pred == label).sum().cpu().float()
         total += len(pred)
@@ -81,6 +82,6 @@ def execute(args):
     dataset = getattr(images, args.dataset_trg)
     trg_dataset = dataset(data_root_tgt, 1, 1)[2].dataset
 
-    accuracy = evaluate(src_dataset, trg_dataset, domain==0, style_encoder, generator, classifier, device)
+    accuracy = evaluate(src_dataset, trg_dataset, domain==0, style_encoder, vgg, generator, classifier, device)
     print(accuracy)
 
