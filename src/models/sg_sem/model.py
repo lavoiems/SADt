@@ -274,9 +274,9 @@ class Discriminator(nn.Module):
 
 def build_model(args):
     generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size)
-    mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains)
-    style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains)
-    discriminator = Discriminator(args.img_size, args.num_domains)
+    mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains, nc=args.num_classes)
+    style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains, nc=args.num_classes)
+    discriminator = Discriminator(args.img_size, args.num_domains, nc=args.num_classes)
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)

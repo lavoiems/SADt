@@ -7,8 +7,9 @@ from torchvision.models import vgg19
 
 
 def save_image(x, ncol, filename):
+    print(x.min(), x.max())
+    x.clamp_(-1, 1)
     x = (x + 1) / 2
-    x.clamp_(0, 1)
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
 
 
@@ -40,9 +41,10 @@ def execute(args):
     style_encoder.load_state_dict(state_dict['style_encoder'])
 
     feature_blocks = 29 if args.img_size == 256 else 8
-    vgg = vgg19(pretrained=True).features[:feature_blocks]
+    vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
-    dataset = dataset_single(os.path.join(f'{data_root}_all', 'sketch' if domain else 'real'))
+    dataset = dataset_single(os.path.join(data_root, 'sketch' if domain else 'real'))
+    trg_dataset = dataset_single(os.path.join(data_root, 'real' if domain else 'sketch'))
     idxs = [0, 15, 31, 50, 60]
     data = []
     for i in range(N):
@@ -51,20 +53,24 @@ def execute(args):
     data = torch.stack(data).to(device)
 
     # Infer translated images
-    d_trg_list = [torch.tensor(0==domain).repeat(25).long().to(device)]
-    x_idxs = torch.randint(low=0, high=len(dataset), size=(5,))
-    x_trg_list = dataset[x_idxs]
+    d_trg = torch.tensor(0==domain).repeat(25).long().to(device)
+    x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(5,))
+    x_trg = [trg_dataset[idx].to(device) for idx in x_idxs]
+    x_trg = torch.stack(5*x_trg)
+    tmp_x = dataset[0]
+    x_trg = [x_trg[0::5], x_trg[1::5], x_trg[2::5], x_trg[3::5], x_trg[4::5]]
+    x_trg = torch.cat(x_trg)
+    save_image(x_trg, 5, f'style_imgs:25.png')
     data = torch.cat(5*[data])
+    save_image(data, 5, f'data:25.png')
 
     N, C, H, W = data.size()
     x_concat = [data]
 
     features = vgg(data)
-    for i, d_trg in enumerate(d_trg_list):
-        for x_trg in x_trg_list:
-            s_trg = style_encoder(x_trg, d_trg)
-            x_fake = generator(data, features, s_trg)
-            x_concat += [x_fake]
+    s_trg = style_encoder(x_trg, d_trg)
+    x_fake = generator(data, features, s_trg)
+    x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
     print(x_concat[:5].shape, x_concat[N:].shape)

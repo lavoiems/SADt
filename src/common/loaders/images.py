@@ -107,6 +107,7 @@ def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     return train_loader, test_loader, test_loader, shape, n_classes
 
 
+@torch.no_grad()
 def cond_mnist_svhn(root, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     transform = transforms.Compose([
@@ -188,6 +189,7 @@ def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
     return train_loader, test_loader, shape, 1
 
 
+@torch.no_grad()
 def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     crop = transforms.RandomResizedCrop(
@@ -307,6 +309,7 @@ class CondDataset(data.Dataset):
         self.domains = [0]*len(dataset1) + [1]*len(dataset2)
         self.dataset = data.ConcatDataset((dataset1, dataset2))
         if semantics:
+
             print('Infering semantics for dataset1')
             for sample, _ in dataset1:
                 sample = sample.to(device)
