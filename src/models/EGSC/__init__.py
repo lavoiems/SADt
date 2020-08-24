@@ -19,8 +19,6 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-
-    #assert len(subdirs(args.dataset_loc)) == args.num_domains
     if args.dataset == 'visda':
         src, val, _, _ = visda(root=args.dataset_loc,
                                train_batch_size=args.train_batch_size,

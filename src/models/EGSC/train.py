@@ -434,10 +434,10 @@ class InputFetcher:
 
     def _fetch_inputs(self):
         try:
-            x, _, d, x2, d2 = next(self.iter)
+            x, _, d, x2, _, d2 = next(self.iter)
         except (AttributeError, StopIteration):
             self.iter = iter(self.loader)
-            x, _, d, x2, d2 = next(self.iter)
+            x, _, d, x2, _, d2 = next(self.iter)
         return x, d, x2, d2
 
     def __next__(self):
