@@ -3,7 +3,7 @@ from ..model import Generator, StyleEncoder
 import torchvision.utils as vutils
 from common.loaders import images
 from torchvision.models import vgg19
-import torch.nn.functionas as F
+import torch.nn.functional as F
 from common.initialize import define_last_model
 
 
