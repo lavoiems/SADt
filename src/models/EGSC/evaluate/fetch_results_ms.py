@@ -10,7 +10,7 @@ def save_image(x, ncol, filename):
     print(x.min(), x.max())
     x.clamp_(-1, 1)
     x = (x + 1) / 2
-    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
+    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
 def parse_args(parser):
@@ -49,20 +49,22 @@ def execute(args):
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(data_root_src)
+    src_dataset = dataset(data_root_src, 1, 1)[2].dataset
     dataset = getattr(images, args.dataset_trg)
-    trg_dataset = dataset(data_root_tgt)
+    trg_dataset = dataset(data_root_tgt, 1, 1)[2].dataset
 
     data = []
     for i in range(N):
         idx = i
-        data.append(src_dataset[idx])
+        data.append(src_dataset[idx][0])
     data = torch.stack(data).to(device)
+    data = data*2 - 1
 
     # Infer translated images
     d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
     x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
-    x_trg = [trg_dataset[idx].to(device) for idx in x_idxs]
+    x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
+    x_trg = x_trg*2 - 1
 
     N, C, H, W = data.size()
     x_concat = [data]
@@ -73,5 +75,8 @@ def execute(args):
     x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
-    results = x_concat
-    save_image(results, 5, f'{name}.png')
+    results = [None] * len(x_concat)
+    results[::2] = x_concat[:len(x_concat)//2]
+    results[1::2] = x_concat[len(x_concat)//2:]
+    results = torch.stack(results)
+    save_image(results, 10, f'{name}.png')
