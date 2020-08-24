@@ -42,7 +42,7 @@ def execute(args):
     feature_blocks = 29 if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks]
 
-    dataset = dataset_single(os.path.join(data_root, 'sketch_all' if domain else 'real_all'))
+    dataset = dataset_single(os.path.join(f'{data_root}_all', 'sketch' if domain else 'real'))
     idxs = [0, 15, 31, 50, 60]
     data = []
     for i in range(N):
