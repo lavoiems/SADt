@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+from common.initialize import define_last_model
 
 
 class ResBlk(nn.Module):
@@ -376,7 +377,10 @@ class Semantics(nn.Module):
         return o
 
 
-def semantics(ss_path, cluster_path):
-    ss = ss_model(ss_path)
-    cluster = cluster_model(cluster_path)
-    return Semantics(ss, cluster)
+def semantics(ss_path, cluster_type, cluster_path):
+    if ss_path:
+        ss = ss_model(ss_path)
+        cluster = define_last_model(cluster_type, cluster_path, 'classifier')
+        return Semantics(ss, cluster)
+    else:
+        return define_last_model(cluster_type, cluster_path, 'classifier')

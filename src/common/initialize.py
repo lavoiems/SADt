@@ -1,6 +1,7 @@
 import os
+from importlib import import_module
 import torch
-import json
+from common.util import get_args
 
 
 def initialize(models, reload, dir, model_path):
@@ -50,3 +51,12 @@ def parse_model_id(path):
 def filter_name(name, dir):
     model_dir = os.path.join(dir, 'model')
     return filter(lambda x: name == x.split(':')[0], os.listdir(model_dir))
+
+
+def define_last_model(model_type, model_path, model_name, **kwargs):
+    model_definition = import_module('.'.join(('models', model_type, 'train')))
+    model_parameters = get_args(model_path)
+    model_parameters = model_parameters.update(kwargs)
+
+    models = model_definition.define_models(**model_parameters)
+    return models[model_name]
