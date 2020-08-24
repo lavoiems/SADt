@@ -21,7 +21,7 @@ def parse_args(parser):
     parser.add_argument('--dataset-trg', type=str, default='dataset_single', help='name of the dataset')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
-    parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
+    parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--max-conv-dim', type=int, default=128)
     parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
     parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
