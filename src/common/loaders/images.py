@@ -107,7 +107,7 @@ def imnist(root, train_batch_size, test_batch_size, valid_split, **kwargs):
     return train_loader, test_loader, test_loader, shape, n_classes
 
 
-def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
+def cond_mnist_svhn(root, train_batch_size, test_batch_size, semantics, nc, device, **kwargs):
     normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     transform = transforms.Compose([
         transforms.Resize(32, interpolation=0),
@@ -116,11 +116,11 @@ def cond_mnist_svhn(root1, root2, train_batch_size, test_batch_size, semantics, 
         normalize,
     ])
 
-    train1 = datasets.MNIST(root1, train=True, download=True, transform=transform)
-    train2 = datasets.SVHN(root2, split='train', download=True, transform=transform)
+    train1 = datasets.MNIST(root, train=True, download=True, transform=transform)
+    train2 = datasets.SVHN(root, split='train', download=True, transform=transform)
     train = CondDataset(train1, train2, semantics, nc, device)
-    test1 = datasets.MNIST(root1, train=False, download=True, transform=transform)
-    test2 = datasets.SVHN(root2, split='test', download=True, transform=transform)
+    test1 = datasets.MNIST(root, train=False, download=True, transform=transform)
+    test2 = datasets.SVHN(root, split='test', download=True, transform=transform)
     test = CondDataset(test1, test2, semantics, nc, device)
 
     train_loader = data.DataLoader(train, batch_size=train_batch_size, shuffle=True,
@@ -339,7 +339,7 @@ class CondDataset(data.Dataset):
         idx_domain = torch.nonzero(torch.LongTensor(self.domains) == domain2, as_tuple=True)[0]
         idxs_ds = list(set(idxs.tolist()) & set(idx_domain.tolist()))
         idx_ds = idxs_ds[random.randint(0, len(idxs_ds)-1)]
-        sample_ds, _ = self.datasets[idx_ds]
+        sample_ds, _ = self.dataset[idx_ds]
         return sample, target, domain, sample2, sample_ds, domain2
 
     def __len__(self):
