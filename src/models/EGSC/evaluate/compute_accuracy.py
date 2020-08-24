@@ -72,7 +72,8 @@ def execute(args):
     style_encoder = StyleEncoder(img_size=args.img_size).to(device)
     style_encoder.load_state_dict(state_dict['style_encoder'])
 
-    classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10)
+    classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)
+    classifier.eval()
 
     feature_blocks = 29 if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
