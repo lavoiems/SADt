@@ -56,7 +56,9 @@ def filter_name(name, dir):
 def define_last_model(model_type, model_path, model_name, **kwargs):
     model_definition = import_module('.'.join(('models', model_type, 'train')))
     model_parameters = get_args(model_path)
-    model_parameters = model_parameters.update(kwargs)
+    print(model_parameters)
+    model_parameters.update(kwargs)
+    print(model_parameters)
 
     models = model_definition.define_models(**model_parameters)
     return models[model_name]
