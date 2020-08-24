@@ -69,8 +69,8 @@ def parse_args(parser):
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
     parser.add_argument('--cluster_type', type=str, default='vmtc_repr', help='Model type for cluster [vmtc_repr, vmt_cluster]')
-    parser.add_argument('--cluster_path', type=str, default='.', help='Path to cluster model')
-    parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
+    parser.add_argument('--cluster_path', type=str, default=None, help='Path to cluster model')
+    parser.add_argument('--ss_path', type=str, default=None, help='Path to self-supervision model')
 
     # directory for training
     parser.add_argument('--dataset', type=str, default='cond_visda', help='Which dataset to use [cond_visda, cond_mnist_svhn]')
