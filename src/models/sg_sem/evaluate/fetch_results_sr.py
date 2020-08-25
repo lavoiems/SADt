@@ -1,6 +1,5 @@
-import os
 import torch
-from ..model import Generator, MappingNetwork, ss_model
+from ..model import Generator, MappingNetwork, semantics
 import torchvision.utils as vutils
 from common.loaders.images import dataset_single
 
@@ -20,11 +19,10 @@ def parse_args(parser):
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
 
 
+@torch.no_grad()
 def execute(args):
     state_dict_path = args.state_dict_path
     domain = args.domain
-    ss_path = args.ss_path
-    da_path = args.da_path
     name = args.save_name
 
     device = 'cuda'
@@ -39,8 +37,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    ss = ss_model(ss_path).cuda()
-    da = cluster_model(da_path).cuda()
+    sem = semantics(args.ss_path, 'vmtc_cluster', args.da_path).to(device)
 
     dataset = dataset_single(args.data_root_src)
     idxs = [0, 15, 31, 50, 60]
@@ -50,12 +47,11 @@ def execute(args):
         data.append(dataset[idx])
     data = torch.stack(data).to(device)
 
-    with torch.no_grad():
-        y_src = da(ss((data+1)*0.5)).argmax(1)
-        print(y_src)
+    y_src = sem((data+1)*0.5).argmax(1)
+    print(y_src)
 
     # Infer translated images
-    d_trg = torch.tensor(0==domain).repeat(25).long().to(device)
+    d_trg = torch.tensor(domain).repeat(25).long().to(device)
     z_trg = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
     z_trg = z_trg.transpose(0,1).reshape(25, latent_dim)
     data = torch.cat(5*[data])

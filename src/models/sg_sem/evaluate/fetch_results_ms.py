@@ -41,20 +41,18 @@ def execute(args):
     sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(args.data_root_src, 1, 1)[2].dataset
+    src_dataset = dataset(args.data_root_src, 1, N)[2]
 
-    data = []
-    for i in range(N):
-        idx = i
-        data.append(src_dataset[idx][0])
-    data = torch.stack(data).to(device)
+    data, labels = next(iter(src_dataset))
+    data = data.to(device)
     data = data*2 - 1
 
     y_src = sem((data+1)*0.5).argmax(1)
     print(y_src)
+    print(labels)
 
     # Infer translated images
-    d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
+    d_trg = torch.tensor(domain).repeat(N).long().to(device)
     z_trg = torch.randn(N, latent_dim).to(device)
     print(z_trg.shape, data.shape, y_src.shape)
 

@@ -12,7 +12,7 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
 
     for data, label in loader:
         N = len(data)
-        d_trg = torch.tensor(0 == domain).repeat(N).long().to(device)
+        d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
         data = data*2 - 1
 
