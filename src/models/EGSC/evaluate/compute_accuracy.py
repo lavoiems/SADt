@@ -83,6 +83,6 @@ def execute(args):
     dataset = getattr(images, args.dataset_trg)
     trg_dataset = dataset(data_root_tgt, 1, 1)[2].dataset
 
-    accuracy = evaluate(src_dataset, trg_dataset, domain==0, style_encoder, vgg, generator, classifier, device)
+    accuracy = evaluate(src_dataset, trg_dataset, domain, style_encoder, vgg, generator, classifier, device)
     print(accuracy)
 
