@@ -22,7 +22,6 @@ def parse_args(parser):
 
 def execute(args):
     state_dict_path = args.state_dict_path
-    data_root = args.data_root
     domain = args.domain
     ss_path = args.ss_path
     da_path = args.da_path
