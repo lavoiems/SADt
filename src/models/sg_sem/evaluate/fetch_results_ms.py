@@ -1,6 +1,5 @@
-import os
 import torch
-from ..model import Generator, MappingNetwork, ss_model, cluster_model
+from ..model import Generator, MappingNetwork, semantics
 import torchvision.utils as vutils
 from common.loaders import images
 
@@ -17,7 +16,6 @@ def parse_args(parser):
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
-    parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
 
@@ -26,8 +24,6 @@ def parse_args(parser):
 def execute(args):
     state_dict_path = args.state_dict_path
     domain = args.domain
-    ss_path = args.ss_path
-    da_path = args.da_path
     name = args.save_name
 
     device = 'cuda'
@@ -42,8 +38,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    ss = ss_model(ss_path).cuda()
-    da = cluster_model(da_path).cuda()
+    sem = semantics(None, 'vmt_cluster', args.da_path).cuda()
 
     dataset = getattr(images, args.dataset_src)
     src_dataset = dataset(args.data_root_src, 1, 1)[2].dataset
@@ -55,7 +50,7 @@ def execute(args):
     data = torch.stack(data).to(device)
     data = data*2 - 1
 
-    y_src = da(ss((data+1)*0.5)).argmax(1)
+    y_src = sem((data+1)*0.5).argmax(1)
     print(y_src)
 
     # Infer translated images
