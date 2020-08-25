@@ -61,7 +61,7 @@ def execute(args):
     data = data*2 - 1
 
     # Infer translated images
-    d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
+    d_trg = torch.tensor(domain).repeat(N).long().to(device)
     x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
     x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
     x_trg = x_trg*2 - 1
