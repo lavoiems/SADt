@@ -38,7 +38,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path).cuda()
+    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
 
     dataset = getattr(images, args.dataset_src)
     src_dataset = dataset(args.data_root_src, 1, 1)[2].dataset
