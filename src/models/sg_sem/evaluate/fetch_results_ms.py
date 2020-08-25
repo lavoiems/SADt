@@ -14,6 +14,7 @@ def save_image(x, ncol, filename):
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
     parser.add_argument('--dataset-src', type=str, help='Path to the data')
+    parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
@@ -45,7 +46,7 @@ def execute(args):
     da = cluster_model(da_path).cuda()
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(args.dataset_src, 1, 1)[2].dataset
+    src_dataset = dataset(args.data_root_src, 1, 1)[2].dataset
 
     data = []
     for i in range(N):
