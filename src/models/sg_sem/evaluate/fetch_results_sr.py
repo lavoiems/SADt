@@ -13,7 +13,7 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--data-root', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -43,7 +43,7 @@ def execute(args):
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
 
-    dataset = dataset_single(os.path.join(data_root, 'sketch' if domain else 'real', 'all'))
+    dataset = dataset_single(args.dataset_src)
     idxs = [0, 15, 31, 50, 60]
     data = []
     for i in range(N):
