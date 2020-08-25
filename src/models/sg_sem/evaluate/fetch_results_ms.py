@@ -15,6 +15,7 @@ def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
     parser.add_argument('--dataset-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
+    parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
@@ -34,9 +35,9 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork()
+    mapping = MappingNetwork(nc=10)
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
