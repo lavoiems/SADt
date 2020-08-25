@@ -2,7 +2,7 @@ import os
 import torch
 from ..model import Generator, MappingNetwork, ss_model, cluster_model
 import torchvision.utils as vutils
-from common.loaders.images import dataset_single
+from common.loaders import images
 
 
 def save_image(x, ncol, filename):
@@ -20,6 +20,7 @@ def parse_args(parser):
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
 
 
+@torch.no_grad()
 def execute(args):
     state_dict_path = args.state_dict_path
     data_root = args.data_root
@@ -29,7 +30,7 @@ def execute(args):
     name = args.save_name
 
     device = 'cuda'
-    N = 5
+    N = 64
     latent_dim = 16
     domain = int(domain)
     # Load model
@@ -43,25 +44,22 @@ def execute(args):
     ss = ss_model(ss_path).cuda()
     da = cluster_model(da_path).cuda()
 
-    dataset = dataset_single(os.path.join(data_root, 'sketch' if domain else 'real', 'all'))
-    idxs = [0, 15, 31, 50, 60]
+    dataset = getattr(images, args.dataset_src)
+    src_dataset = dataset(args.dataset_src, 1, 1)[2].dataset
+
     data = []
     for i in range(N):
-        idx = idxs[i]
-        data.append(dataset[idx])
+        idx = i
+        data.append(src_dataset[idx][0])
     data = torch.stack(data).to(device)
+    data = data*2 - 1
 
-    with torch.no_grad():
-        y_src = da(ss((data+1)*0.5)).argmax(1)
-        print(y_src)
+    y_src = da(ss((data+1)*0.5)).argmax(1)
+    print(y_src)
 
     # Infer translated images
-    d_trg = torch.tensor(0==domain).repeat(25).long().to(device)
-    z_trg = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
-    z_trg = z_trg.transpose(0,1).reshape(25, latent_dim)
-    z_trg = z_trg
-    data = torch.cat(5*[data])
-    y_src = torch.cat(5*[y_src])
+    d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
+    z_trg = torch.randn(1, N, latent_dim).to(device)
     print(z_trg.shape, data.shape, y_src.shape)
 
     N, C, H, W = data.size()
@@ -74,6 +72,8 @@ def execute(args):
     x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
-    print(x_concat[:5].shape, x_concat[N:].shape)
-    results = torch.cat([x_concat[:5], x_concat[N:]])
-    save_image(results, 5, f'{name}.png')
+    results = [None] * len(x_concat)
+    results[::2] = x_concat[:len(x_concat)//2]
+    results[1::2] = x_concat[len(x_concat)//2:]
+    results = torch.stack(results)
+    save_image(results, 10, f'{name}.png')

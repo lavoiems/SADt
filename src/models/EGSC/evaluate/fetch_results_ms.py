@@ -66,7 +66,6 @@ def execute(args):
     x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
     x_trg = x_trg*2 - 1
 
-    N, C, H, W = data.size()
     x_concat = [data]
 
     features = vgg(data)
