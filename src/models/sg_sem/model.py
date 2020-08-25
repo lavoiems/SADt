@@ -357,14 +357,6 @@ def ss_model(ss_path):
     return ss
 
 
-def cluster_model(cluster_path):
-    cluster = Classifier(256, 5, 2048)
-    state_dict = torch.load(cluster_path, map_location='cpu')
-    cluster.load_state_dict(state_dict)
-    cluster.eval()
-    return cluster
-
-
 class Semantics(nn.Module):
     def __init__(self, ss, cluster):
         super().__init__()
