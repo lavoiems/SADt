@@ -1,7 +1,7 @@
 import os
 import torch
 from models.vmtc_repr.model import Classifier
-from ..model import Generator, MappingNetwork, ss_model, cluster_model
+from ..model import Generator, MappingNetwork, ss_model
 import torchvision
 from torch.utils import data
 from common.util import save_image, normalize

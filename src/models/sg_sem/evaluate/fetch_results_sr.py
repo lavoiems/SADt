@@ -1,6 +1,6 @@
 import os
 import torch
-from ..model import Generator, MappingNetwork, ss_model, cluster_model
+from ..model import Generator, MappingNetwork, ss_model
 import torchvision.utils as vutils
 from common.loaders.images import dataset_single
 
