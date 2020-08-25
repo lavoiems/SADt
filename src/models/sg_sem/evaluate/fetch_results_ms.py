@@ -13,7 +13,7 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--data-root', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -23,7 +23,6 @@ def parse_args(parser):
 @torch.no_grad()
 def execute(args):
     state_dict_path = args.state_dict_path
-    data_root = args.data_root
     domain = args.domain
     ss_path = args.ss_path
     da_path = args.da_path
