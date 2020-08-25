@@ -14,7 +14,7 @@ def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classif
 
     for data, label in loader:
         N = len(data)
-        d_trg = torch.tensor(0 == domain).repeat(N).long().to(device)
+        d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
         x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
         x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
         x_trg = x_trg * 2 - 1
@@ -24,18 +24,20 @@ def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classif
         s = style_encoder(x_trg, d_trg)
         f = vgg(data)
         gen = generator(data, f, s)
+        gen.clamp_(-1, 1)
+        gen = (gen + 1) / 2
         pred = F.softmax(classifier(gen), 1).argmax(1)
         correct += (pred == label).sum().cpu().float()
         total += len(pred)
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
+    save_image((data.clamp(-1,1)+1)/2, 6, 'data.png')
+    save_image(gen, 6, 'gen.png')
     return accuracy
 
 
 def save_image(x, ncol, filename):
     print(x.min(), x.max())
-    x.clamp_(-1, 1)
-    x = (x + 1) / 2
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
@@ -79,9 +81,9 @@ def execute(args):
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(data_root_src, 1, 1)[2]
+    src_dataset = dataset(data_root_src, 1, 32)[2]
     dataset = getattr(images, args.dataset_trg)
-    trg_dataset = dataset(data_root_tgt, 1, 1)[2].dataset
+    trg_dataset = dataset(data_root_tgt, 1, 32)[2].dataset
 
     accuracy = evaluate(src_dataset, trg_dataset, domain==0, style_encoder, vgg, generator, classifier, device)
     print(accuracy)
