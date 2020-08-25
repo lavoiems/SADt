@@ -60,10 +60,9 @@ def execute(args):
 
     # Infer translated images
     d_trg = torch.tensor(0==domain).repeat(N).long().to(device)
-    z_trg = torch.randn(1, N, latent_dim).to(device)
+    z_trg = torch.randn(N, latent_dim).to(device)
     print(z_trg.shape, data.shape, y_src.shape)
 
-    N, C, H, W = data.size()
     x_concat = [data]
 
     print(z_trg.shape, y_src.shape, d_trg.shape)
