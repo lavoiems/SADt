@@ -56,25 +56,21 @@ def execute(args):
         print(y_src)
 
     # Infer translated images
-    d_trg_list = [torch.tensor(0==domain).repeat(25).long().to(device)]
-    z_trg_list = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
-    z_trg_list = z_trg_list.transpose(0,1).reshape(25, latent_dim)
-    z_trg_list = torch.stack([z_trg_list])
+    d_trg = torch.tensor(0==domain).repeat(25).long().to(device)
+    z_trg = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
+    z_trg = z_trg.transpose(0,1).reshape(25, latent_dim)
     data = torch.cat(5*[data])
     y_src = torch.cat(5*[y_src])
-    print(z_trg_list.shape, data.shape, y_src.shape)
+    print(z_trg.shape, data.shape, y_src.shape)
 
     N, C, H, W = data.size()
     x_concat = [data]
 
-    for i, d_trg in enumerate(d_trg_list):
-
-        for z_trg in z_trg_list:
-            print(z_trg.shape, y_src.shape, d_trg.shape)
-            s_trg = mapping(z_trg, y_src, d_trg)
-            print(data.shape, s_trg.shape)
-            x_fake = generator(data, s_trg)
-            x_concat += [x_fake]
+    print(z_trg.shape, y_src.shape, d_trg.shape)
+    s_trg = mapping(z_trg, y_src, d_trg)
+    print(data.shape, s_trg.shape)
+    x_fake = generator(data, s_trg)
+    x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
     print(x_concat[:5].shape, x_concat[N:].shape)
