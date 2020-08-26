@@ -14,9 +14,9 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-        data = data*2 - 1
-
         y = sem(data)
+
+        data = data*2 - 1
         z = torch.randn(N, nz).to(device)
         s = mapping(z, y, d_trg)
         gen = generator(data, s)
