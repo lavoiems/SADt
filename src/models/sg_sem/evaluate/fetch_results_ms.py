@@ -39,6 +39,7 @@ def execute(args):
     mapping.to(device)
 
     sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
+    sem.eval()
 
     dataset = getattr(images, args.dataset_src)
     src_dataset = dataset(args.data_root_src, 1, N)[2]
