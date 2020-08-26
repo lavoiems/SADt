@@ -27,7 +27,8 @@ def has_models(path):
 
 
 def load_last_model(model, model_type, dir):
-    names = filter_name(model_type, dir)
+    names = list(filter_name(model_type, dir))
+    print(names)
     last_name = max(names, key=parse_model_id)
     path = os.path.join(dir, 'model', last_name)
     print(path)
@@ -56,9 +57,8 @@ def filter_name(name, dir):
 def define_last_model(model_type, model_path, model_name, **kwargs):
     model_definition = import_module('.'.join(('models', model_type, 'train')))
     model_parameters = get_args(model_path)
-    print(model_parameters)
     model_parameters.update(kwargs)
-    print(model_parameters)
 
     models = model_definition.define_models(**model_parameters)
-    return models[model_name]
+    model = models[model_name]
+    return load_last_model(model, model_name, model_path)

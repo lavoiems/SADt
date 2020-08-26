@@ -47,7 +47,8 @@ def execute(args):
     data = data.to(device)
     data = data*2 - 1
 
-    y_src = sem((data+1)*0.5).argmax(1)
+    #y_src = sem((data+1)*0.5).argmax(1)
+    y_src = sem(data).argmax(1)
     print(y_src)
     print(labels)
 

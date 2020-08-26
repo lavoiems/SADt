@@ -37,7 +37,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, 'vmtc_cluster', args.da_path).to(device)
+    sem = semantics(args.ss_path, 'vmtc_repr', args.da_path, nc=5).to(device)
 
     dataset = dataset_single(args.data_root_src)
     idxs = [0, 15, 31, 50, 60]
