@@ -67,12 +67,13 @@ def execute(args):
     mapping.to(device)
 
     sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
+    sem.eval()
 
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)
     classifier.eval()
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(data_root_src, 1, 1)[2]
+    src_dataset = dataset(data_root_src, 1, 32)[2]
 
     accuracy = evaluate(src_dataset, nz, domain, sem, mapping, generator, classifier, device)
     print(accuracy)
