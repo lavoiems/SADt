@@ -236,10 +236,10 @@ class dataset_single(data.Dataset):
         self.transforms = transforms.Compose(transform)
 
     def __getitem__(self, index):
-        data = self.load_img(self.img[index], self.input_dim)
+        data = self.load_img(self.img[index])
         return data
 
-    def load_img(self, img_name, input_dim):
+    def load_img(self, img_name):
         img = Image.open(img_name).convert('RGB')
         img = self.transforms(img)
         return img

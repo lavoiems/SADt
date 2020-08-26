@@ -71,7 +71,7 @@ def execute(args):
         for data in src:
             data = data.to(device)
             d_trg = d[:data.shape[0]]
-            y_trg = da(ss(data+1)/2).argmax(1)
+            y_trg = da(ss((data+1)/2)).argmax(1)
             for i in range(10):
                 z_trg = torch.randn(data.shape[0], latent_dim, device=device)
                 s_trg = mapping(z_trg, y_trg, d_trg)

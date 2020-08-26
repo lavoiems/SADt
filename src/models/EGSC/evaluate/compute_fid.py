@@ -1,12 +1,11 @@
-import os
 import torch
 from models.vmtc_repr.model import Classifier
 from ..model import Generator, StyleEncoder
 import torchvision
-from torch.utils import data
 from common.util import save_image, normalize
-from common.loaders.images import dataset_single
 from common.evaluation import fid
+from torchvision.models import vgg19
+from common.loaders import images
 
 
 def ss_model(ss_path):
@@ -36,60 +35,66 @@ def cluster_model(cluster_path):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path of the model')
+    parser.add_argument('--data-root-src', type=str, help='Path to the data')
+    parser.add_argument('--data-root-tgt', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset')
+    parser.add_argument('--dataset-trg', type=str, default='dataset_single', help='name of the dataset')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
-    parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
-    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
-    parser.add_argument('--data-root', type=str, help='Path of the data')
+    parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
+    parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
+    parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
     parser.add_argument('--category', type=str, help='Category of FID to compute')
 
 
+@torch.no_grad()
 def execute(args):
     device = 'cuda'
-    latent_dim = 16
     batch_size = 128
     # Load model
-    state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
+    state_dict = torch.load(args.state_dict_path, map_location='cpu')
     generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork()
-    mapping.load_state_dict(state_dict['mapping_network'])
-    mapping.to(device)
+    style_encoder = StyleEncoder(img_size=args.img_size).to(device)
+    style_encoder.load_state_dict(state_dict['style_encoder'])
 
-    ss = ss_model(args.ss_path).cuda()
-    da = cluster_model(args.da_path).cuda()
+    feature_blocks = 29 if args.img_size == 256 else 8
+    vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
-    dataset = dataset_single(os.path.join(args.data_root, 'real' if args.domain else 'sketch', args.category))
+    dataset = getattr(images, args.dataset_src)
+    src_dataset = dataset(args.data_root_src)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    dataset = dataset_single(os.path.join(args.data_root, 'sketch' if args.domain else 'real', args.category))
-    trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
+    dataset = getattr(images, args.dataset_trg)
+    trg_dataset = dataset(args.data_root_tgt)
+
+    print(f'Src size: {len(src_dataset)}, Tgt size: {len(trg_dataset)}')
     generated = []
-    with torch.no_grad():
-        print('Fetching generated data')
-        d = torch.tensor(0==args.domain).repeat(batch_size).long().to(device)
-        for data in src:
-            data = data.to(device)
-            d_trg = d[:data.shape[0]]
-            y_trg = da(ss(data+1)/2).argmax(1)
-            for i in range(10):
-                z_trg = torch.randn(data.shape[0], latent_dim, device=device)
-                s_trg = mapping(z_trg, y_trg, d_trg)
-                gen = generator(data, s_trg)
-                generated.append(gen)
-        generated = torch.cat(generated)
-        generated = normalize(generated)
-        save_image(generated[:4], 'Debug.png')
+    print('Fetching generated data')
+    d = torch.tensor(args.domain).repeat(batch_size).long().to(device)
+    for data in src:
+        data = data.to(device)
+        d_trg = d[:data.shape[0]]
+        features = vgg(data)
+        for i in range(10):
+            x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(len(data),))
+            x_trg = torch.stack([trg_dataset[idx].to(device) for idx in x_idxs])
+            x_trg = x_trg * 2 - 1
+            s_trg = style_encoder(x_trg, d_trg)
+            gen = generator(data, features, s_trg)
+            generated.append(gen)
+    generated = torch.cat(generated)
+    generated = normalize(generated)
+    save_image(generated[:4], 'Debug.png')
 
-        print('Fetching target data')
-        trg_data = []
-        for data in trg:
-            data = data.to(device)
-            trg_data.append(data)
-        trg_data = torch.cat(trg_data)
-        print(trg_data.shape)
+    print('Fetching target data')
+    trg_data = []
+    for data in trg_dataset:
+        data = data.to(device)
+        trg_data.append(data)
+    trg_data = torch.cat(trg_data)
+    print(trg_data.shape)
 
-        trg_data = normalize(trg_data)
-        print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
-        computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
+    trg_data = normalize(trg_data)
+    print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
+    computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {computed_fid}')
