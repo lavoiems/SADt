@@ -43,7 +43,7 @@ def parse_args(parser):
     parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
-    parser.add_argument('--max-conv-dim', type=int, default=128)
+    parser.add_argument('--max-conv-dim', type=int, default=512)
     parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
     parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -66,7 +66,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path).cuda()
+    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
 
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)
     classifier.eval()
