@@ -17,6 +17,7 @@ def parse_args(parser):
     parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--dataset-tgt', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
+    parser.add_argument('--nc', type=int, default=5, help='Number of classes')
 
 
 @torch.no_grad()
@@ -27,7 +28,7 @@ def execute(args):
     # Load model
     state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, nc=args.nc).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
