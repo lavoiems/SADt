@@ -41,7 +41,7 @@ def get_args_dict(args):
 
 def normalize(x):
     x.clamp_(-1, 1)
-    x = (x + 1) / 2
+    x.add_(1).mul_(0.5)
     return x
 
 

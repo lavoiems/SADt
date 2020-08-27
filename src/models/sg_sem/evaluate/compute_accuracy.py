@@ -1,9 +1,11 @@
+import math
 import torch
 from ..model import Generator, MappingNetwork, semantics
 import torchvision.utils as vutils
 from common.loaders import images
 import torch.nn.functional as F
 from common.initialize import define_last_model
+from common.util import normalize
 
 
 def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
@@ -14,25 +16,29 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-        y = sem(data)
+        y = sem(data).argmax(1)
 
         data = data*2 - 1
         z = torch.randn(N, nz).to(device)
         s = mapping(z, y, d_trg)
         gen = generator(data, s)
 
+        gen = normalize(gen)
         pred = F.softmax(classifier(gen), 1).argmax(1)
         correct += (pred == label).sum().cpu().float()
         total += len(pred)
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
+    print(accuracy)
+    save_image(normalize(data), 'data.png')
+    save_image(gen, 'gen.png')
     return accuracy
 
 
-def save_image(x, ncol, filename):
+def save_image(x, filename):
     print(x.min(), x.max())
-    x.clamp_(-1, 1)
-    x = (x + 1) / 2
+    print(x.shape)
+    ncol = int(math.sqrt(len(x)))
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 

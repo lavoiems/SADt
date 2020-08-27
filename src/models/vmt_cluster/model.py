@@ -90,6 +90,5 @@ class Classifier(nn.Module):
                 layer.bias.data.fill_(0)
 
     def forward(self, x):
-        print(x.shape)
         o = self.x(x)
         return self.mlp(o).view(x.shape[0], -1)
