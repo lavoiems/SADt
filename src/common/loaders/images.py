@@ -220,6 +220,38 @@ def cond_visda(root, train_batch_size, test_batch_size, semantics, nc, device, *
     return train_loader, test_loader, shape, nc
 
 
+class dataset_mnist(data.Dataset):
+    def __init__(self, dataroot):
+        transform = transforms.Compose([
+            transforms.Resize(32, interpolation=0),
+            transforms.ToTensor(),
+            triple_channel,
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        self.dataset = datasets.MNIST(dataroot, train=False, download=True, transform=transform)
+
+    def __getitem__(self, index):
+        return self.dataset[index]
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+class dataset_svhn(data.Dataset):
+    def __init__(self, dataroot):
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        self.dataset = datasets.SVHN(dataroot, split='test', download=True, transform=transform)
+
+    def __getitem__(self, index):
+        return self.dataset[index]
+
+    def __len__(self):
+        return len(self.dataset)
+
+
 class dataset_single(data.Dataset):
     def __init__(self, dataroot):
         self.dataroot = dataroot
