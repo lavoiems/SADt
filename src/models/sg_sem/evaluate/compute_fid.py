@@ -36,9 +36,9 @@ def execute(args):
 
     sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
 
-    dataset = getattr(images, args.dataset_src)(args.dataroot_src)
+    dataset = getattr(images, args.dataset_src)(args.data_root_src)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
-    dataset = getattr(images, args.dataset_tgt)(args.dataroot_tgt)
+    dataset = getattr(images, args.dataset_tgt)(args.data_root_tgt)
     trg = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
 
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
