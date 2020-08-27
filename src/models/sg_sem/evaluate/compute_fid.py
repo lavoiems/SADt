@@ -34,7 +34,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc).to(device)
+    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
 
     dataset = getattr(images, args.dataset_src)(args.dataroot_src)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
