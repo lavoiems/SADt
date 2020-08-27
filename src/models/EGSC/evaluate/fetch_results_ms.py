@@ -1,4 +1,3 @@
-import os
 import torch
 from ..model import Generator, StyleEncoder
 import torchvision.utils as vutils
