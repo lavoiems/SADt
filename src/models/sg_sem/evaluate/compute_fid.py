@@ -11,7 +11,7 @@ def parse_args(parser):
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
-    parser.add_argument('--model-type', type=int, default=5, help='DA model type in {vmt_cluster, vmtc_repr}')
+    parser.add_argument('--model-type', type=str, help='DA model type in {vmt_cluster, vmtc_repr}')
     parser.add_argument('--data-root-src', type=str, help='Path of the data')
     parser.add_argument('--data-root-tgt', type=str, help='Path of the data')
     parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
