@@ -28,9 +28,9 @@ def execute(args):
     # Load model
     state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, nc=args.nc).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork()
+    mapping = MappingNetwork(nc=args.nc)
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
