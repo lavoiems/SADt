@@ -1,36 +1,9 @@
 import torch
-from models.vmtc_repr.model import Classifier
 from ..model import Generator, StyleEncoder
-import torchvision
 from common.util import save_image, normalize
 from common.evaluation import fid
 from torchvision.models import vgg19
 from common.loaders import images
-
-
-def ss_model(ss_path):
-    ss = torchvision.models.resnet50()
-    ss.fc = torch.nn.Identity()
-    state_dict = torch.load(ss_path, map_location='cpu')['state_dict']
-    for k in list(state_dict.keys()):
-        # retain only encoder_q up to before the embedding layer
-        if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
-            # remove prefix
-            state_dict[k[len("module.encoder_q."):]] = state_dict[k]
-        # delete renamed or unused k
-        del state_dict[k]
-    err = ss.load_state_dict(state_dict, strict=False)
-    print(err)
-    ss.eval()
-    return ss
-
-
-def cluster_model(cluster_path):
-    cluster = Classifier(256, 5, 2048)
-    state_dict = torch.load(cluster_path, map_location='cpu')
-    cluster.load_state_dict(state_dict)
-    cluster.eval()
-    return cluster
 
 
 def parse_args(parser):
@@ -45,7 +18,6 @@ def parse_args(parser):
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
     parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
     parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
-    parser.add_argument('--category', type=str, help='Category of FID to compute')
 
 
 @torch.no_grad()
