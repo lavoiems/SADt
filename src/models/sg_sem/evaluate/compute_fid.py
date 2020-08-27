@@ -16,6 +16,7 @@ def parse_args(parser):
     parser.add_argument('--data-root-tgt', type=str, help='Path of the data')
     parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--dataset-tgt', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
+    parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
 
 
 @torch.no_grad()
