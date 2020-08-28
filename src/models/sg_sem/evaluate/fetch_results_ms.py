@@ -7,7 +7,7 @@ from common.loaders import images
 def save_image(x, ncol, filename):
     x = (x + 1) / 2
     x.clamp_(0, 1)
-    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
+    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
 def parse_args(parser):
@@ -46,12 +46,10 @@ def execute(args):
 
     data, labels = next(iter(src_dataset))
     data = data.to(device)
-    data = data*2 - 1
+    print(data.min(), data.max())
 
-    #y_src = sem((data+1)*0.5).argmax(1)
     y_src = sem(data).argmax(1)
-    print(y_src)
-    print(labels)
+    data = data*2 - 1
 
     # Infer translated images
     d_trg = torch.tensor(domain).repeat(N).long().to(device)
@@ -63,6 +61,7 @@ def execute(args):
     print(z_trg.shape, y_src.shape, d_trg.shape)
     s_trg = mapping(z_trg, y_src, d_trg)
     print(data.shape, s_trg.shape)
+    print(data.min(), data.max())
     x_fake = generator(data, s_trg)
     x_concat += [x_fake]
 

@@ -231,7 +231,7 @@ class dataset_mnist(data.Dataset):
         self.dataset = datasets.MNIST(dataroot, train=False, download=True, transform=transform)
 
     def __getitem__(self, index):
-        return self.dataset[index]
+        return self.dataset[index][0]
 
     def __len__(self):
         return len(self.dataset)
@@ -246,7 +246,7 @@ class dataset_svhn(data.Dataset):
         self.dataset = datasets.SVHN(dataroot, split='test', download=True, transform=transform)
 
     def __getitem__(self, index):
-        return self.dataset[index]
+        return self.dataset[index][0]
 
     def __len__(self):
         return len(self.dataset)

@@ -47,9 +47,8 @@ def execute(args):
     d = torch.tensor(args.domain).repeat(batch_size).long().to(device)
     for data in src:
         data = data.to(device)
-        data = (data+1)/2
         d_trg = d[:data.shape[0]]
-        y_trg = sem(data).argmax(1)
+        y_trg = sem((data+1)*0.5).argmax(1)
         for i in range(10):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, y_trg, d_trg)
