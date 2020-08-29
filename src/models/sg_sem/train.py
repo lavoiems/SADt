@@ -170,7 +170,7 @@ def compute_d_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_trg=N
     out = nets.discriminator(x_fake, d_trg)
     loss_fake = adv_loss(out, 0)
 
-    loss = loss_real + loss_fake + args.lambda_reg * loss_reg + loss_class
+    loss = loss_real + loss_fake + args.lambda_reg * loss_reg + args.lambda_class * loss_class
     return loss, Munch(real=loss_real.item(),
                        fake=loss_fake.item(),
                        clas=loss_class.item(),
