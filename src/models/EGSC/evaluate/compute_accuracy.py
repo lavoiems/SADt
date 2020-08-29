@@ -22,7 +22,7 @@ def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classif
         data = data*2 - 1
 
         s = style_encoder(x_trg, d_trg)
-        f = vgg(data)
+        f = vgg(data) # TODO align data
         gen = generator(data, f, s)
         gen.clamp_(-1, 1)
         gen = (gen + 1) / 2

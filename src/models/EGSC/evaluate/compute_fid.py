@@ -51,11 +51,10 @@ def execute(args):
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
-        features = vgg(data)
+        features = vgg(data) # TODO align data
         for i in range(10):
             x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(len(data),))
             x_trg = torch.stack([trg_dataset[idx].to(device) for idx in x_idxs])
-            x_trg = x_trg * 2 - 1
             s_trg = style_encoder(x_trg, d_trg)
             gen = generator(data, features, s_trg)
             generated.append(gen)

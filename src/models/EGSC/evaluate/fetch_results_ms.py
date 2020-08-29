@@ -67,7 +67,7 @@ def execute(args):
 
     x_concat = [data]
 
-    features = vgg(data)
+    features = vgg(data) # TODO align data
     s_trg = style_encoder(x_trg, d_trg)
     x_fake = generator(data, features, s_trg)
     x_concat += [x_fake]

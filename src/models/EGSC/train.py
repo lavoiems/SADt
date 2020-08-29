@@ -92,7 +92,7 @@ class Solver(nn.Module):
             inputs = next(fetcher)
             x_real, d_org = inputs.x_src, inputs.d_src
             x_trg, d_trg = inputs.x_src2, inputs.d_src2
-            features_real = self.vgg(x_real)
+            features_real = self.vgg((x_real + 1) / 2)
 
             # train the discriminator
             d_loss, d_losses_ref = compute_d_loss(
@@ -295,7 +295,7 @@ def compute_g_loss(nets, vgg, args, x_real, features_real, d_org, d_trg, x_ref):
     #s_pred = nets.style_encoder(x_fake, d_org)
     #loss_sty = torch.mean(torch.abs(s_pred - s_trg))
 
-    features_fake = vgg(x_fake)
+    features_fake = vgg((x_fake+1)/2)
     loss_vgg = torch.mean(torch.abs(features_real - features_fake))
     loss_gram = torch.mean(torch.abs(gram_matrix(features_real) - gram_matrix(features_fake)))
     loss_vae = torch.mean(s_trg**2)
