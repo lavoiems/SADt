@@ -48,8 +48,8 @@ def parse_args(parser):
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--max-conv-dim', type=int, default=512)
-    parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
-    parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
+    parser.add_argument('--bottleneck-size', type=int, default=64, help='Size of the bottleneck')
+    parser.add_argument('--bottleneck-blocks', type=int, default=4, help='Number of layers at the bottleneck')
 
 
 @torch.no_grad()
