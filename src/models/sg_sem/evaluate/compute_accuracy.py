@@ -13,6 +13,7 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
     total = 0
 
     for data, label in loader:
+        data = data*2 - 1
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
@@ -45,7 +46,7 @@ def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
     parser.add_argument('--classifier-path', type=str, help='Path to the classifier model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
-    parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset')
+    parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset in {mnist,svhn}')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--max-conv-dim', type=int, default=512)
