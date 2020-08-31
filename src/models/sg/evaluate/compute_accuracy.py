@@ -74,7 +74,8 @@ def execute(args):
     classifier.eval()
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(data_root_src, 1, 32)[2]
+    dataset = dataset(data_root_src)
+    src_dataset = torch.utils.data.DataLoader(dataset, batch_size=64, num_workers=10)
 
     accuracy = evaluate(src_dataset, nz, domain, mapping, generator, classifier, device)
     print(accuracy)
