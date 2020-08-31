@@ -17,6 +17,7 @@ def parse_args(parser):
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
+    parser.add_argument('--bottleneck-size', type=int, default=64)
 
 
 @torch.no_grad()
@@ -31,7 +32,7 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=128).to(device)
+    generator = Generator(bottleneck_size=args.bottleneck_size, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=128).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
