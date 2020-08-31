@@ -13,11 +13,10 @@ def evaluate(loader, nz, domain, mapping, generator, classifier, device):
     total = 0
 
     for data, label in loader:
+        data = data*2 - 1
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-
-        data = data*2 - 1
         z = torch.randn(N, nz).to(device)
         s = mapping(z, d_trg)
         gen = generator(data, s)
@@ -45,7 +44,7 @@ def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
     parser.add_argument('--classifier-path', type=str, help='Path to the classifier model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
-    parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset')
+    parser.add_argument('--dataset-src', type=str, default='mnist', help='name of the dataset in {mnist, svhn}')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
     parser.add_argument('--max-conv-dim', type=int, default=512)
@@ -74,8 +73,7 @@ def execute(args):
     classifier.eval()
 
     dataset = getattr(images, args.dataset_src)
-    dataset = dataset(data_root_src)
-    src_dataset = torch.utils.data.DataLoader(dataset, batch_size=64, num_workers=10)
+    src_dataset = dataset(data_root_src, 1, 64)[2]
 
     accuracy = evaluate(src_dataset, nz, domain, mapping, generator, classifier, device)
     print(accuracy)

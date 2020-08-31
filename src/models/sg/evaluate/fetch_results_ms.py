@@ -12,7 +12,7 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--dataset-src', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_mnist, dataset_svhn}')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
@@ -38,9 +38,10 @@ def execute(args):
     mapping.to(device)
 
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(args.data_root_src, 1, N)[2]
+    dataset = dataset(args.data_root_src)
+    src_dataset = torch.utils.data.DataLoader(dataset, batch_size=N, num_workers=10)
 
-    data, labels = next(iter(src_dataset))
+    data = next(iter(src_dataset))
     data = data.to(device)
     print(data.min(), data.max())
 

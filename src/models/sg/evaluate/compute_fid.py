@@ -31,6 +31,8 @@ def execute(args):
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
+    mapping.eval()
+    generator.eval()
 
     dataset = getattr(images, args.dataset_src)(args.data_root_src)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
@@ -44,14 +46,13 @@ def execute(args):
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
-        for i in range(10):
+        for i in range(1):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, d_trg)
             gen = generator(data, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
     generated = normalize(generated)
-    save_image(generated[:4], 'Debug.png')
 
     print('Fetching target data')
     trg_data = []
@@ -59,9 +60,10 @@ def execute(args):
         data = data.to(device)
         trg_data.append(data)
     trg_data = torch.cat(trg_data)
-    print(trg_data.shape)
+    print(generated.shape, generated.min(), generated.max(), trg_data.shape, trg_data.min(), trg_data.max())
 
     trg_data = normalize(trg_data)
-    print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
-    computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
+    save_image(generated[:100], 'gen.png')
+    save_image(trg_data[:100], 'trg.png')
+    computed_fid = fid.calculate_fid(trg_data, generated, 256, device, 2048)
     print(f'FID: {computed_fid}')
