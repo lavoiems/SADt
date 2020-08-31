@@ -1,6 +1,6 @@
 import math
 import torch
-from ..model import Generator, MappingNetwork, semantics
+from ..model import Generator, MappingNetwork
 import torchvision.utils as vutils
 from common.loaders import images
 import torch.nn.functional as F
@@ -8,7 +8,7 @@ from common.initialize import define_last_model
 from common.util import normalize
 
 
-def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
+def evaluate(loader, nz, domain, mapping, generator, classifier, device):
     correct = 0
     total = 0
 
@@ -16,10 +16,10 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-        y = sem((data+1)*0.5).argmax(1)
 
+        data = data*2 - 1
         z = torch.randn(N, nz).to(device)
-        s = mapping(z, y, d_trg)
+        s = mapping(z, d_trg)
         gen = generator(data, s)
 
         gen = normalize(gen)
@@ -51,7 +51,6 @@ def parse_args(parser):
     parser.add_argument('--max-conv-dim', type=int, default=512)
     parser.add_argument('--bottleneeck-size', type=int, default=64, help='Size of the bottleneck')
     parser.add_argument('--bottleneck_blocks', type=int, default=4, help='Number of layers at the bottleneck')
-    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
 
 
 @torch.no_grad()
@@ -71,15 +70,12 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
-    sem.eval()
-
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)
     classifier.eval()
 
     dataset = getattr(images, args.dataset_src)
     src_dataset = dataset(data_root_src, 1, 32)[2]
 
-    accuracy = evaluate(src_dataset, nz, domain, sem, mapping, generator, classifier, device)
+    accuracy = evaluate(src_dataset, nz, domain, mapping, generator, classifier, device)
     print(accuracy)
 
