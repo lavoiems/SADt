@@ -50,7 +50,8 @@ class Solver(nn.Module):
                 print('Initializing %s...' % name)
                 network.apply(he_init)
 
-        dim = 29 if args.img_size == 256 else 8
+        #dim = 29 if args.img_size == 256 else 8
+        dim = 29
         self.vgg = vgg19(pretrained=True).features[:dim]
         self.vgg.eval()
         self.vgg = self.vgg.to(self.device)

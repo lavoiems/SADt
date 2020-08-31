@@ -145,6 +145,7 @@ class Generator(nn.Module):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
+        print(x.shape, f.shape)
         x = x*f
         for block in self.decode:
             x = block(x, s)

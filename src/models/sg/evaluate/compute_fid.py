@@ -27,7 +27,7 @@ def execute(args):
     # Load model
     state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
+    generator = Generator(bottleneck_size=args.bottleneck_size, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
@@ -61,9 +61,9 @@ def execute(args):
         data = data.to(device)
         trg_data.append(data)
     trg_data = torch.cat(trg_data)
+    trg_data = normalize(trg_data)
     print(generated.shape, generated.min(), generated.max(), trg_data.shape, trg_data.min(), trg_data.max())
 
-    trg_data = normalize(trg_data)
     save_image(generated[:100], 'gen.png')
     save_image(trg_data[:100], 'trg.png')
     computed_fid = fid.calculate_fid(trg_data, generated, 256, device, 2048)
