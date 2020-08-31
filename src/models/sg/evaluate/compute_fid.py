@@ -28,7 +28,7 @@ def execute(args):
 
     generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork(nc=args.nc)
+    mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
