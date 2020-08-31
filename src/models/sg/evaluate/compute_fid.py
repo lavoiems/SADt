@@ -16,6 +16,7 @@ def parse_args(parser):
     parser.add_argument('--dataset-tgt', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
     parser.add_argument('--max-conv-dim', type=int, default=512, help='Size of the image')
+    parser.add_argument('--bottleneck-size', type=int, default=64)
 
 
 @torch.no_grad()
