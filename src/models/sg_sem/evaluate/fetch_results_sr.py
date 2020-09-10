@@ -2,6 +2,7 @@ import torch
 from ..model import Generator, MappingNetwork, semantics
 import torchvision.utils as vutils
 from common.loaders.images import dataset_single
+from common.util import get_args
 
 
 def save_image(x, ncol, filename):
@@ -12,6 +13,7 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
+    parser.add_argument('--model-path', type=str, help='Path of the model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model-path')
@@ -31,7 +33,8 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4).to(device)
+    bottleneck_size = get_args(args.model_path)['bottleneck_size']
+    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
