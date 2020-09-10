@@ -1,13 +1,14 @@
 import torch
 from ..model import Generator, MappingNetwork, semantics
 from torch.utils import data
-from common.util import save_image, normalize
+from common.util import save_image, normalize, get_args
 from common.loaders import images
 from common.evaluation import fid
 
 
 def parse_args(parser):
-    parser.add_argument('--state-dict-path', type=str, help='Path of the model')
+    parser.add_argument('--state-dict-path', type=str, help='State dict path of the model')
+    parser.add_argument('--model-path', type=str, help='Path of the model')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -28,7 +29,8 @@ def execute(args):
     # Load model
     state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    bottleneck_size = get_args(args.model_path)['bottleneck_size']
+    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork(nc=args.nc)
     mapping.load_state_dict(state_dict['mapping_network'])
@@ -44,30 +46,30 @@ def execute(args):
 
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
-    print('Fetching generated data')
+    #print('Fetching generated data')
     d = torch.tensor(args.domain).repeat(batch_size).long().to(device)
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
         y_trg = sem((data+1)*0.5).argmax(1)
-        for i in range(10):
+        for i in range(5):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, y_trg, d_trg)
             gen = generator(data, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
     generated = normalize(generated)
-    save_image(generated[:4], 'Debug.png')
+    #save_image(generated[:4], 'Debug.png')
 
-    print('Fetching target data')
+    #print('Fetching target data')
     trg_data = []
     for data in trg:
         data = data.to(device)
         trg_data.append(data)
     trg_data = torch.cat(trg_data)
-    print(trg_data.shape)
+    #print(trg_data.shape)
 
     trg_data = normalize(trg_data)
-    print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
+    #print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
     computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {computed_fid}')

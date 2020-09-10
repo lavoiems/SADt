@@ -28,10 +28,10 @@ def has_models(path):
 
 def load_last_model(model, model_type, dir):
     names = list(filter_name(model_type, dir))
-    print(names)
+    #print(names)
     last_name = max(names, key=parse_model_id)
     path = os.path.join(dir, 'model', last_name)
-    print(path)
+    #print(path)
     model.load_state_dict(torch.load(path, map_location='cpu'))
     return model
 
