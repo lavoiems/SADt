@@ -1,5 +1,5 @@
 import torch
-from ..model import Generator, MappingNetwork, semantics
+from ..model import Generator, MappingNetwork
 import torchvision.utils as vutils
 from common.loaders import images
 
@@ -12,12 +12,12 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--dataset-src', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_mnist, dataset_svhn}')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
-    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--save-name', type=str, help='Name of the sample file')
+    parser.add_argument('--bottleneck-size', type=int, default=64)
 
 
 @torch.no_grad()
@@ -32,33 +32,28 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=args.bottleneck_size, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=128).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork(nc=10)
+    mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
-    sem.eval()
-
     dataset = getattr(images, args.dataset_src)
-    src_dataset = dataset(args.data_root_src, 1, N)[2]
+    dataset = dataset(args.data_root_src)
+    src_dataset = torch.utils.data.DataLoader(dataset, batch_size=N, num_workers=10)
 
-    data, labels = next(iter(src_dataset))
+    data = next(iter(src_dataset))
     data = data.to(device)
     print(data.min(), data.max())
-
-    y_src = sem((data+1)*0.5).argmax(1)
 
     # Infer translated images
     d_trg = torch.tensor(domain).repeat(N).long().to(device)
     z_trg = torch.randn(N, latent_dim).to(device)
-    print(z_trg.shape, data.shape, y_src.shape)
+    print(z_trg.shape, data.shape)
 
     x_concat = [data]
 
-    print(z_trg.shape, y_src.shape, d_trg.shape)
-    s_trg = mapping(z_trg, y_src, d_trg)
+    s_trg = mapping(z_trg, d_trg)
     print(data.shape, s_trg.shape)
     print(data.min(), data.max())
     x_fake = generator(data, s_trg)

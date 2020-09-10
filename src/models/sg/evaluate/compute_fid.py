@@ -1,24 +1,22 @@
 import torch
-from ..model import Generator, MappingNetwork, semantics
+from ..model import Generator, MappingNetwork
 from torch.utils import data
-from common.util import save_image, normalize, get_args
+from common.util import save_image, normalize
 from common.loaders import images
 from common.evaluation import fid
 
 
 def parse_args(parser):
-    parser.add_argument('--state-dict-path', type=str, help='State dict path of the model')
-    parser.add_argument('--model-path', type=str, help='Path of the model')
+    parser.add_argument('--state-dict-path', type=str, help='Path of the model')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
-    parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
-    parser.add_argument('--da-path', type=str, help='Domain adaptation path')
     parser.add_argument('--model-type', type=str, help='DA model type in {vmt_cluster, vmtc_repr}')
     parser.add_argument('--data-root-src', type=str, help='Path of the data')
     parser.add_argument('--data-root-tgt', type=str, help='Path of the data')
     parser.add_argument('--dataset-src', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--dataset-tgt', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
-    parser.add_argument('--nc', type=int, default=5, help='Number of classes')
+    parser.add_argument('--max-conv-dim', type=int, default=512, help='Size of the image')
+    parser.add_argument('--bottleneck-size', type=int, default=64)
 
 
 @torch.no_grad()
@@ -29,15 +27,13 @@ def execute(args):
     # Load model
     state_dict = torch.load(args.state_dict_path, map_location='cpu')
 
-    bottleneck_size = get_args(args.model_path)['bottleneck_size']
-    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork(nc=args.nc)
+    mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
-
-    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
-    sem.eval()
+    mapping.eval()
+    generator.eval()
 
     dataset = getattr(images, args.dataset_src)(args.data_root_src)
     src = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=10)
@@ -46,30 +42,29 @@ def execute(args):
 
     print(f'Src size: {len(src)}, Tgt size: {len(trg)}')
     generated = []
-    #print('Fetching generated data')
+    print('Fetching generated data')
     d = torch.tensor(args.domain).repeat(batch_size).long().to(device)
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
-        y_trg = sem((data+1)*0.5).argmax(1)
-        for i in range(5):
+        for i in range(10):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
-            s_trg = mapping(z_trg, y_trg, d_trg)
+            s_trg = mapping(z_trg, d_trg)
             gen = generator(data, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
     generated = normalize(generated)
-    #save_image(generated[:4], 'Debug.png')
 
-    #print('Fetching target data')
+    print('Fetching target data')
     trg_data = []
     for data in trg:
         data = data.to(device)
         trg_data.append(data)
     trg_data = torch.cat(trg_data)
-    #print(trg_data.shape)
+    print(generated.shape, generated.min(), generated.max(), trg_data.shape, trg_data.min(), trg_data.max())
 
     trg_data = normalize(trg_data)
-    #print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
-    computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
+    save_image(generated[:100], 'gen.png')
+    save_image(trg_data[:100], 'trg.png')
+    computed_fid = fid.calculate_fid(trg_data, generated, 256, device, 2048)
     print(f'FID: {computed_fid}')

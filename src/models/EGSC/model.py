@@ -124,7 +124,8 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
         # down/up-sampling blocks
-        repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
+        self.bs_size = int(np.log2(bottleneck_size/4))
+        repeat_num = int(np.log2(img_size)) - self.bs_size
         for _ in range(repeat_num):
             dim_out = min(dim_in*2, max_conv_dim)
             self.encode.append(
@@ -134,6 +135,7 @@ class Generator(nn.Module):
                                upsample=True))  # stack-like
             dim_in = dim_out
 
+        self.f_embed = nn.Linear(512, self.dim_out * self.bs_size * self.bs_size)
         # bottleneck blocks
         for _ in range(bottleneck_blocks):
             self.encode.append(
@@ -145,7 +147,10 @@ class Generator(nn.Module):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
-        x = x*f
+        of = F.adaptive_avg_pool2d(f, (1, 1))
+        of = self.f_embed(of)
+        of = of.view(*x.shape)
+        x = x*of
         for block in self.decode:
             x = block(x, s)
         return self.to_rgb(x)
