@@ -74,7 +74,7 @@ def execute(args):
     N, C, H, W = data.size()
     x_concat = [data]
 
-    features = vgg(data) # TODO align data
+    features = vgg((data+1)*0.5) # TODO align data
     s_trg = style_encoder(x_trg, d_trg)
     x_fake = generator(data, features, s_trg)
     x_concat += [x_fake]

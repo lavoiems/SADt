@@ -33,7 +33,7 @@ def execute(args):
     style_encoder = StyleEncoder(img_size=args.img_size).to(device)
     style_encoder.load_state_dict(state_dict['style_encoder'])
 
-    feature_blocks = 29 if args.img_size == 256 else 8
+    feature_blocks = 29# if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
     dataset = getattr(images, args.dataset_src)
@@ -52,7 +52,7 @@ def execute(args):
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
-        features = vgg(data) # TODO align data
+        features = vgg((data+1)*0.5) # TODO align data
         for i in range(10):
             x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(len(data),))
             x_trg = torch.stack([trg_dataset[idx].to(device) for idx in x_idxs])

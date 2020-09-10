@@ -15,20 +15,21 @@ def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classif
     for data, label in loader:
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
-        x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
-        x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
-        x_trg = x_trg * 2 - 1
         data, label = data.to(device), label.to(device)
-        data = data*2 - 1
-
-        s = style_encoder(x_trg, d_trg)
         f = vgg(data) # TODO align data
-        gen = generator(data, f, s)
-        gen.clamp_(-1, 1)
-        gen = (gen + 1) / 2
-        pred = F.softmax(classifier(gen), 1).argmax(1)
-        correct += (pred == label).sum().cpu().float()
-        total += len(pred)
+        data = data*2 - 1
+        for i in range(10):
+            x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
+            x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
+            x_trg = x_trg * 2 - 1
+
+            s = style_encoder(x_trg, d_trg)
+            gen = generator(data, f, s)
+            gen.clamp_(-1, 1)
+            gen = (gen + 1) / 2
+            pred = F.softmax(classifier(gen), 1).argmax(1)
+            correct += (pred == label).sum().cpu().float()
+            total += len(pred)
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
     save_image((data.clamp(-1,1)+1)/2, 6, 'data.png')
@@ -77,7 +78,7 @@ def execute(args):
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)
     classifier.eval()
 
-    feature_blocks = 29 if args.img_size == 256 else 8
+    feature_blocks = 29# if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
 
     dataset = getattr(images, args.dataset_src)
