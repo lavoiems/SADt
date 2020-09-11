@@ -101,7 +101,7 @@ def evaluate(visualiser, data, datap, id):
 
 def train(args):
     parameters = vars(args)
-    train_loader1, test_loader1 = args.loaders1
+    train_loader1, test_loader1 = args.loaders
 
     models = define_models(**parameters)
     initialize(models, args.reload, args.save_path, args.model_path)
