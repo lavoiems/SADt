@@ -48,10 +48,10 @@ def contrastive_loss(x, n_classes, encoder, contrastive, device):
 
 
 def define_models(shape, **parameters):
-    encoder = model.Encoder(shape[0], **parameters)
+    classifier = model.Encoder(shape[0], **parameters)
     contrastive = model.Contrastive(**parameters)
     return {
-        'encoder': encoder,
+        'classifier': classifier,
         'contrastive': contrastive,
     }
 
@@ -106,7 +106,7 @@ def train(args):
     models = define_models(**parameters)
     initialize(models, args.reload, args.save_path, args.model_path)
 
-    encoder = models['encoder'].to(args.device)
+    encoder = models['classifier'].to(args.device)
     contrastive = models['contrastive'].to(args.device)
     print(encoder)
     print(contrastive)
