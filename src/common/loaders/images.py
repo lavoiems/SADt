@@ -156,6 +156,36 @@ def mnist_svhn(root, train_batch_size, test_batch_size, **kwargs):
     return train_loader, test_loader, shape, None
 
 
+def single_visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
+    crop = transforms.RandomResizedCrop(
+        256, scale=[0.8, 1.0], ratio=[0.9, 1.1])
+    rand_crop = transforms.Lambda(
+        lambda x: crop(x) if random.random() < 0.5 else x)
+    train_transform = [
+        rand_crop,
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ]
+    test_transform = [
+        transforms.Resize((256, 256), interpolation=1),
+        transforms.ToTensor(),
+    ]
+
+    train_transform = transforms.Compose(train_transform)
+    test_transform = transforms.Compose(test_transform)
+    train = datasets.ImageFolder(root, train_transform)
+    test = datasets.ImageFolder(root, test_transform)
+
+    train_loader = torch.utils.data.DataLoader(train, batch_size=train_batch_size, pin_memory=False,
+                                               shuffle=shuffle, num_workers=10, drop_last=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=test_batch_size, shuffle=shuffle,
+                                              num_workers=10, drop_last=False)
+
+    shape = train_loader.dataset[0][0].shape
+    return train_loader, test_loader, shape, 5
+
+
 def visda(root, train_batch_size, test_batch_size, shuffle=True, **kwargs):
     normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
     crop = transforms.RandomResizedCrop(
@@ -293,7 +323,8 @@ class SourceDataset(data.Dataset):
         datas = []
         labels = []
         domains = []
-        maps = [1, 0, 4, 2, 3]
+        #maps = [1, 0, 4, 2, 3]
+        maps = [2, 3, 0, 1, 4]
         for idx, domain in enumerate(sorted(domain_names)):
             correct = 0
             total = 0

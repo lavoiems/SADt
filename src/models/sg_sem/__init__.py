@@ -19,7 +19,7 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape1=[3, args.img_size], nc=args.num_classes)
+    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape=[3, args.img_size], nc=args.num_classes)
     semantics = semantics.to(args.device)
     semantics.eval()
 
@@ -68,7 +68,7 @@ def parse_args(parser):
     parser.add_argument('--num_outs_per_domain', type=int, default=10, help='Number of generated images per domain during sampling')
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
-    parser.add_argument('--cluster_type', type=str, default='vmtc_repr', help='Model type for cluster [vmtc_repr, vmt_cluster]')
+    parser.add_argument('--cluster_type', type=str, default='vmtc_repr', help='Model type for cluster [vmtc_repr, vmt_cluster, vrinv]')
     parser.add_argument('--cluster_path', type=str, default=None, help='Path to cluster model')
     parser.add_argument('--ss_path', type=str, default=None, help='Path to self-supervision model')
 

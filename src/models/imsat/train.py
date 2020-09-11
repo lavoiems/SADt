@@ -29,8 +29,6 @@ def compute_loss(x, xp, encoder, contrastive, device):
     z = encoder(x)
     zp = encoder(xp)
 
-    ztrue = torch.randint(z.shape[1], size=(z.shape[0],))
-    ztrue = one_hot_embedding(ztrue, z.shape[1]).to(device)
     p = contrastive(z)
     closs = p.mean()
 
@@ -49,11 +47,11 @@ def contrastive_loss(x, n_classes, encoder, contrastive, device):
     return cz, cenc, gp
 
 
-def define_models(shape1, **parameters):
-    encoder = model.Encoder(shape1[0], **parameters)
+def define_models(shape, **parameters):
+    classifier = model.Encoder(shape[0], **parameters)
     contrastive = model.Contrastive(**parameters)
     return {
-        'encoder': encoder,
+        'classifier': classifier,
         'contrastive': contrastive,
     }
 
@@ -103,12 +101,12 @@ def evaluate(visualiser, data, datap, id):
 
 def train(args):
     parameters = vars(args)
-    train_loader1, test_loader1 = args.loaders1
+    train_loader1, test_loader1 = args.loaders
 
     models = define_models(**parameters)
     initialize(models, args.reload, args.save_path, args.model_path)
 
-    encoder = models['encoder'].to(args.device)
+    encoder = models['classifier'].to(args.device)
     contrastive = models['contrastive'].to(args.device)
     print(encoder)
     print(contrastive)
@@ -129,10 +127,8 @@ def train(args):
             datax = batchx[0].float().to(args.device)
 
             optim_contrastive.zero_grad()
-            ploss, nloss, gp = contrastive_loss(datax, args.n_classes, encoder, contrastive, args.device)
-            ploss.backward()
-            nloss.backward(mone)
-            (1 * gp).backward()
+            ploss, nloss, gp = contrastive_loss(datax, args.nc, encoder, contrastive, args.device)
+            (ploss - nloss + gp).backward()
             optim_contrastive.step()
 
         optim_encoder.zero_grad()
@@ -150,7 +146,7 @@ def train(args):
             contrastive.eval()
             print('Iter: {}'.format(i), end=': ')
             evaluate(args.visualiser, datax, dataxp, 'x')
-            _acc = evaluate_accuracy(args.visualiser, i, test_loader1, encoder, args.n_classes, 'x', args.device)
+            _acc = evaluate_accuracy(args.visualiser, i, test_loader1, encoder, args.nc, 'x', args.device)
             print('disc loss: {}'.format((ploss - nloss).detach().cpu().numpy()), end='\t')
             print('gp: {}'.format(gp.detach().cpu().numpy()), end='\t')
             print('positive dist loss: {}'.format(dloss.detach().cpu().numpy()), end='\t')
