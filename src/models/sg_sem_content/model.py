@@ -136,7 +136,7 @@ class Generator(nn.Module):
                                upsample=True))  # stack-like
             dim_in = dim_out
 
-        self.y_embed = nn.Linear(512, dim_out * bs_size * bs_size)
+        self.y_embed = nn.Linear(nc, dim_out * bs_size * bs_size)
         # bottleneck blocks
         for _ in range(bottleneck_blocks):
             self.encode.append(
@@ -276,9 +276,9 @@ class Discriminator(nn.Module):
 
 
 def build_model(args):
-    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size)
-    mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains, nc=args.num_classes)
-    style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains, nc=args.num_classes)
+    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size, nc=args.num_classes)
+    mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains)
+    style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains)
     discriminator = Discriminator(args.img_size, args.num_domains, nc=args.num_classes)
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
