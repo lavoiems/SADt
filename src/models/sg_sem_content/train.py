@@ -205,7 +205,7 @@ def compute_g_loss(nets, args, x_real, y_real, d_org, d_trg, lambda_ds, z_trgs=N
         s_trg2 = nets.mapping_network(z_trg2, d_trg)
     else:
         s_trg2 = nets.style_encoder(x_ds, d_trg)
-    x_fake2 = nets.generator(x_real, y_real, y_real, s_trg2).detach()
+    x_fake2 = nets.generator(x_real, y_real, s_trg2).detach()
     loss_ds = torch.mean(torch.abs(x_fake - x_fake2))
 
     # cycle-consistency loss
