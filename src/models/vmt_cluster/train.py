@@ -86,9 +86,9 @@ def mixup_loss(x, classifier, device):
     return soft_cross_entropy(mix_yp, mix_y.detach()).mean()
 
 
-def define_models(shape1, **parameters):
-    classifier = model.Classifier(shape1[0], **parameters)
-    discriminator = model.Discriminator(shape1[0], shape1[1], **parameters)
+def define_models(shape, **parameters):
+    classifier = model.Classifier(shape[0], **parameters)
+    discriminator = model.Discriminator(shape[0], shape[1], **parameters)
     return {
         'classifier': classifier,
         'discriminator': discriminator
