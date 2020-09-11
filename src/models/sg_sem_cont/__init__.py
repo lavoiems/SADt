@@ -19,10 +19,6 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape1=[3, args.img_size], nc=args.num_classes)
-    semantics = semantics.to(args.device)
-    semantics.eval()
-
     dataset = getattr(images, args.dataset)
     src, val, _, _ = dataset(root=args.dataset_loc,
                             train_batch_size=args.train_batch_size,
@@ -40,7 +36,7 @@ def parse_args(parser):
     # model arguments
     parser.add_argument('--img_size', type=int, default=256, help='Image resolution')
     parser.add_argument('--num_domains', type=int, default=2, help='Number of domains')
-    parser.add_argument('--num_classes', type=int, default=5, help='Number of classes')
+    parser.add_argument('--repr_dim', type=int, default=512, help='Dimension of semantics')
     parser.add_argument('--latent_dim', type=int, default=16, help='Latent vector dimension')
     parser.add_argument('--hidden_dim', type=int, default=512,help='Hidden dimension of mapping network')
     parser.add_argument('--style_dim', type=int, default=64, help='Style code dimension')
@@ -53,8 +49,8 @@ def parse_args(parser):
     parser.add_argument('--lambda_reg', type=float, default=1, help='Weight for R1 regularization')
     parser.add_argument('--lambda_cyc', type=float, default=1, help='Weight for cyclic consistency loss')
     parser.add_argument('--lambda_sty', type=float, default=1, help='Weight for style reconstruction loss')
+    parser.add_argument('--lambda_sem', type=float, default=1, help='Weight for sem loss')
     parser.add_argument('--lambda_ds', type=float, default=2, help='Weight for diversity sensitivity loss')
-    parser.add_argument('--lambda_class', type=float, default=1, help='Weight for classification loss')
 
     # training arguments
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
@@ -68,9 +64,8 @@ def parse_args(parser):
     parser.add_argument('--num_outs_per_domain', type=int, default=10, help='Number of generated images per domain during sampling')
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
-    parser.add_argument('--cluster_type', type=str, default='vmtc_repr', help='Model type for cluster [vmtc_repr, vmt_cluster, vrinv]')
-    parser.add_argument('--cluster_path', type=str, default=None, help='Path to cluster model')
-    parser.add_argument('--ss_path', type=str, default=None, help='Path to self-supervision model')
+    parser.add_argument('--sem_type', type=str, default='vgg', help='Model type for cont sem [vgg, moco]')
+    parser.add_argument('--sem_path', type=str, default=None, help='Path to self-supervision model')
 
     # directory for training
     parser.add_argument('--dataset', type=str, default='cond_visda', help='Which dataset to use [cond_visda, cond_mnist_svhn]')
