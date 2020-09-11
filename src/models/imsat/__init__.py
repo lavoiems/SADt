@@ -21,6 +21,6 @@ def execute(args):
     args.loaders = (train_loader, test_loader)
     args.shape = shape
 
-    args.n_classes = n_classes
+    args.nc = n_classes
 
     train(args)

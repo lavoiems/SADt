@@ -127,7 +127,7 @@ def train(args):
             datax = batchx[0].float().to(args.device)
 
             optim_contrastive.zero_grad()
-            ploss, nloss, gp = contrastive_loss(datax, args.n_classes, encoder, contrastive, args.device)
+            ploss, nloss, gp = contrastive_loss(datax, args.nc, encoder, contrastive, args.device)
             (ploss - nloss + gp).backward()
             optim_contrastive.step()
 
@@ -146,7 +146,7 @@ def train(args):
             contrastive.eval()
             print('Iter: {}'.format(i), end=': ')
             evaluate(args.visualiser, datax, dataxp, 'x')
-            _acc = evaluate_accuracy(args.visualiser, i, test_loader1, encoder, args.n_classes, 'x', args.device)
+            _acc = evaluate_accuracy(args.visualiser, i, test_loader1, encoder, args.nc, 'x', args.device)
             print('disc loss: {}'.format((ploss - nloss).detach().cpu().numpy()), end='\t')
             print('gp: {}'.format(gp.detach().cpu().numpy()), end='\t')
             print('positive dist loss: {}'.format(dloss.detach().cpu().numpy()), end='\t')

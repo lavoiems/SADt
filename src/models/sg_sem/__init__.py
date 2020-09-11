@@ -19,7 +19,7 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape1=[3, args.img_size], nc=args.num_classes)
+    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape=[3, args.img_size], nc=args.num_classes)
     semantics = semantics.to(args.device)
     semantics.eval()
 
