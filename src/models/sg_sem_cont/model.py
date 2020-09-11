@@ -179,7 +179,11 @@ class MappingNetwork(nn.Module):
                                             nn.Linear(512, style_dim))]
 
     def forward(self, z, f, d):
-        o = torch.cat((z, f), 1)
+        of = f
+        if len(f.shape) > 2:
+            of = F.adaptive_avg_pool2d(of, (1, 1))
+            of = of.view(of.shape[0], -1)
+        o = torch.cat((z, of), 1)
         h = self.shared(o)
         out = []
         for layer in self.unshared:
@@ -212,16 +216,23 @@ class StyleEncoder(nn.Module):
         self.unshared = nn.ModuleList()
         for _ in range(num_domains):
             unshared = []
+            dim_in = dim_out + nr
             for _ in range(n_unshared_layers):
-                unshared += [nn.Linear(dim_out+nr, dim_out),
-                                  nn.LeakyReLU(0.2)]
-            unshared += [nn.Linear(dim_out, style_dim)]
+                unshared += [nn.Linear(dim_in, dim_out),
+                                       nn.LeakyReLU(0.2)]
+                dim_in = dim_out
+            unshared += [nn.Linear(dim_in, style_dim)]
             self.unshared += [nn.Sequential(*unshared)]
 
     def forward(self, x, f, d):
         h = self.shared(x)
         h = h.view(h.size(0), -1)
-        h = torch.cat((h, f), 1)
+
+        of = f
+        if len(f.shape) > 2:
+            of = F.adaptive_avg_pool2d(f, (1, 1))
+            of = of.view(of.shape[0], -1)
+        h = torch.cat((h, of), 1)
         out = []
         for layer in self.unshared:
             out += [layer(h)]

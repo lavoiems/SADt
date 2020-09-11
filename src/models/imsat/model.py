@@ -29,7 +29,7 @@ class Encoder(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)))
 
     def forward(self, x):
-        return self.x(x).squeeze()
+        return self.x(x).view(x.shape[0], -1)
 
 
 class Contrastive(nn.Module):

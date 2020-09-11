@@ -97,7 +97,8 @@ class Solver(nn.Module):
             x_real, d_org = inputs.x_src, inputs.d_src
             x_trg, x_ds, d_trg = inputs.x_src2, inputs.x_ds, inputs.d_src2
             z_trg, z_trg2 = inputs.z_trg, inputs.z_trg2
-            f_real = self.cont_repr((x_real + 1) / 2)
+            with torch.no_grad():
+                f_real = self.cont_repr((x_real + 1) / 2)
 
             # train the discriminator
             d_loss, d_losses_latent = compute_d_loss(
@@ -197,7 +198,9 @@ def compute_g_loss(nets, f_net, args, x_real, f_real, d_org, d_trg, lambda_ds, z
     out = nets.discriminator(x_fake, d_trg)
     loss_adv = adv_loss(out, 1)
 
-    f_fake = f_net(x_fake+1/2)
+    with torch.no_grad():
+        f_fake = f_net((x_fake+1)/2)
+
     loss_sem = torch.mean(torch.abs(f_real - f_fake))
 
     # style reconstruction loss

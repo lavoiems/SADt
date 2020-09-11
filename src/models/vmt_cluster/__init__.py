@@ -32,10 +32,10 @@ def parse_args(parser):
 def execute(args):
     print(args)
     dataset1 = getattr(images, args.dataset1)
-    train_loader1, _, test_loader1, shape1, nc = dataset1(
+    train_loader1, _, test_loader1, shape, nc = dataset1(
         args.dataset_loc1, args.train_batch_size, args.test_batch_size)
     args.loaders1 = (train_loader1, test_loader1)
-    args.shape1 = shape1
+    args.shape = shape
     args.nc = nc
 
     dataset2 = getattr(images, args.dataset2)
@@ -47,7 +47,7 @@ def execute(args):
     model_definition = import_module('.'.join(('models', 'imsat', 'train')))
     model_parameters = get_args(args.cluster_model_path)
     model_parameters['n_classes'] = nc
-    models = model_definition.define_models(shape1, **model_parameters)
+    models = model_definition.define_models(shape, **model_parameters)
     cluster = models['encoder']
     cluster = load_last_model(cluster, 'encoder', args.cluster_model_path)
     args.cluster = cluster
