@@ -162,11 +162,10 @@ def one_hot_embedding(labels, num_classes):
 
 
 class MappingNetwork(nn.Module):
-    def __init__(self, latent_dim=16, style_dim=64, num_domains=2, nc=5):
+    def __init__(self, latent_dim=16, style_dim=64, num_domains=2):
         super().__init__()
-        self.nc = nc
         layers = []
-        layers += [nn.Linear(latent_dim+nc, 512)]
+        layers += [nn.Linear(latent_dim, 512)]
         layers += [nn.ReLU()]
         for _ in range(3):
             layers += [nn.Linear(512, 512)]
@@ -183,9 +182,8 @@ class MappingNetwork(nn.Module):
                                             nn.ReLU(),
                                             nn.Linear(512, style_dim))]
 
-    def forward(self, z, y, d):
-        l = one_hot_embedding(y, self.nc)
-        o = torch.cat((z, l), 1)
+    def forward(self, z, d):
+        o = z
         h = self.shared(o)
         out = []
         for layer in self.unshared:
@@ -197,7 +195,7 @@ class MappingNetwork(nn.Module):
 
 
 class StyleEncoder(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, nc=5, n_unshared_layers=0):
+    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, n_unshared_layers=0):
         super().__init__()
         self.num_domains = num_domains
         dim_in = 2**14 // img_size
@@ -216,7 +214,7 @@ class StyleEncoder(nn.Module):
         self.shared = nn.Sequential(*blocks)
 
         self.unshared = nn.ModuleList()
-        for _ in range(num_domains*nc):
+        for _ in range(num_domains):
             unshared = []
             for _ in range(n_unshared_layers):
                 unshared += [nn.Linear(dim_out, dim_out),
@@ -224,14 +222,14 @@ class StyleEncoder(nn.Module):
             unshared += [nn.Linear(dim_out, style_dim)]
             self.unshared += [nn.Sequential(*unshared)]
 
-    def forward(self, x, y, d):
+    def forward(self, x, d):
         h = self.shared(x)
         h = h.view(h.size(0), -1)
         out = []
         for layer in self.unshared:
             out += [layer(h)]
         out = torch.stack(out, dim=1)  # (batch, num_domains, style_dim)
-        pos = d*self.num_domains + y
+        pos = d
         idx = torch.LongTensor(range(d.size(0))).to(y.device)
         s = out[idx, pos]  # (batch, style_dim)
         return s

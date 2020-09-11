@@ -178,8 +178,7 @@ class MappingNetwork(nn.Module):
                                             nn.Linear(512, style_dim))]
 
     def forward(self, z, d):
-        l = one_hot_embedding(y, self.nc)
-        o = torch.cat((z, l), 1)
+        o = z
         h = self.shared(o)
         out = []
         for layer in self.unshared:
@@ -225,7 +224,7 @@ class StyleEncoder(nn.Module):
         for layer in self.unshared:
             out += [layer(h)]
         out = torch.stack(out, dim=1)  # (batch, num_domains, style_dim)
-        pos = self.num_domains
+        pos = d
         idx = torch.LongTensor(range(d.size(0))).to(y.device)
         s = out[idx, pos]  # (batch, style_dim)
         return s
