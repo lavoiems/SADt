@@ -225,7 +225,7 @@ class StyleEncoder(nn.Module):
             out += [layer(h)]
         out = torch.stack(out, dim=1)  # (batch, num_domains, style_dim)
         pos = d
-        idx = torch.LongTensor(range(d.size(0))).to(y.device)
+        idx = torch.LongTensor(range(d.size(0))).to(x.device)
         s = out[idx, pos]  # (batch, style_dim)
         return s
 
