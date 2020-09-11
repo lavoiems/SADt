@@ -47,8 +47,8 @@ def contrastive_loss(x, n_classes, encoder, contrastive, device):
     return cz, cenc, gp
 
 
-def define_models(shape1, **parameters):
-    encoder = model.Encoder(shape1[0], **parameters)
+def define_models(shape, **parameters):
+    encoder = model.Encoder(shape[0], **parameters)
     contrastive = model.Contrastive(**parameters)
     return {
         'encoder': encoder,
