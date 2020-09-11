@@ -15,7 +15,7 @@ def parse_args(parser):
 
 def execute(args):
     print(args)
-    dataset1 = getattr(images, args.dataset1)
+    dataset1 = getattr(images, args.dataset)
     train_loader1, _, test_loader1, shape1, n_classes = dataset1(
         args.dataset_loc1, args.train_batch_size, args.test_batch_size, args.valid_split)
     args.loaders1 = (train_loader1, test_loader1)

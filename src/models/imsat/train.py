@@ -29,8 +29,6 @@ def compute_loss(x, xp, encoder, contrastive, device):
     z = encoder(x)
     zp = encoder(xp)
 
-    ztrue = torch.randint(z.shape[1], size=(z.shape[0],))
-    ztrue = one_hot_embedding(ztrue, z.shape[1]).to(device)
     p = contrastive(z)
     closs = p.mean()
 
