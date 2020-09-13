@@ -19,7 +19,7 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape1=[3, args.img_size], nc=args.num_classes)
+    semantics = model.semantics(args.ss_path, args.cluster_type, args.cluster_path, shape=[3, args.img_size], nc=args.num_classes)
     semantics = semantics.to(args.device)
     semantics.eval()
 
@@ -58,7 +58,7 @@ def parse_args(parser):
 
     # training arguments
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
-    parser.add_argument('--total_iters', type=int, default=100000, help='Number of total iterations')
+    parser.add_argument('--total_iters', type=int, default=50000, help='Number of total iterations')
     parser.add_argument('--resume_iter', type=int, default=0, help='Iterations to resume training/testing')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate for D, E and G')
     parser.add_argument('--f_lr', type=float, default=1e-6, help='Learning rate for F')

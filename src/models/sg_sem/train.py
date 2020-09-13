@@ -53,9 +53,9 @@ class Solver(nn.Module):
                 print('Initializing %s...' % name)
                 network.apply(he_init)
 
-    def _save_checkpoint(self, step):
+    def _save_checkpoint(self, step, checkpoint):
         for ckptio in self.ckptios:
-            ckptio.save(step)
+            ckptio.save(step, checkpoint)
 
     def _load_checkpoint(self, step):
         for ckptio in self.ckptios:
@@ -140,13 +140,13 @@ class Solver(nn.Module):
                 print(log)
 
             # generate images for debugging
-            if (i+1) % args.sample_every == 0:
-                os.makedirs(args.save_path, exist_ok=True)
-                debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
+            #if (i+1) % args.sample_every == 0:
+            #    os.makedirs(args.save_path, exist_ok=True)
+            #    debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
             # save model checkpoints
             if (i+1) % args.save_every == 0:
-                self._save_checkpoint(step=i+1)
+                self._save_checkpoint(step=i+1, checkpoint=args.checkpoint)
 
 
 def compute_d_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_trg=None):
@@ -313,13 +313,16 @@ class CheckpointIO(object):
     def register(self, **kwargs):
         self.module_dict.update(kwargs)
 
-    def save(self, step):
+    def save(self, step, checkpoint):
         fname = self.fname_template.format(step)
         print('Saving checkpoint into %s...' % fname)
         outdict = {}
         for name, module in self.module_dict.items():
             outdict[name] = module.state_dict()
         torch.save(outdict, fname)
+        rmpath = self.fname_template.format(step-checkpoint)
+        if os.path.exists(rmpath):
+            os.remove(rmpath)
 
     def load(self, step):
         fname = self.fname_template.format(step)

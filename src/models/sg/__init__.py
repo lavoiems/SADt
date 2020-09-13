@@ -52,7 +52,7 @@ def parse_args(parser):
 
     # training arguments
     parser.add_argument('--randcrop_prob', type=float, default=0.5, help='Probabilty of using random-resized cropping')
-    parser.add_argument('--total_iters', type=int, default=100000, help='Number of total iterations')
+    parser.add_argument('--total_iters', type=int, default=50000, help='Number of total iterations')
     parser.add_argument('--resume_iter', type=int, default=0, help='Iterations to resume training/testing')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate for D, E and G')
     parser.add_argument('--f_lr', type=float, default=1e-6, help='Learning rate for F')

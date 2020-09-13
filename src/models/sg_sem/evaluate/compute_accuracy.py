@@ -36,8 +36,6 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
 
 
 def save_image(x, filename):
-    print(x.min(), x.max())
-    print(x.shape)
     ncol = int(math.sqrt(len(x)))
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
@@ -72,7 +70,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
+    sem = semantics(None, 'vmt_cluster', args.da_path, shape=[3, 32], nc=10).cuda()
     sem.eval()
 
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)

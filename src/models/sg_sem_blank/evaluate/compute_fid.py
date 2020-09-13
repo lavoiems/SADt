@@ -32,11 +32,11 @@ def execute(args):
     bottleneck_size = get_args(args.model_path)['bottleneck_size']
     generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork(nc=args.nc)
+    mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
+    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape=[3, args.img_size]).to(device)
     sem.eval()
 
     dataset = getattr(images, args.dataset_src)(args.data_root_src)
@@ -54,7 +54,7 @@ def execute(args):
         y_trg = sem((data+1)*0.5).argmax(1)
         for i in range(5):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
-            s_trg = mapping(z_trg, y_trg, d_trg)
+            s_trg = mapping(z_trg, d_trg)
             gen = generator(data, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
