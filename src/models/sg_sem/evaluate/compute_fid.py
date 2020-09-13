@@ -36,7 +36,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
+    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape=[3, args.img_size]).to(device)
     sem.eval()
 
     dataset = getattr(images, args.dataset_src)(args.data_root_src)

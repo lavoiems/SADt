@@ -140,9 +140,9 @@ class Solver(nn.Module):
                 print(log)
 
             # generate images for debugging
-            if (i+1) % args.sample_every == 0:
-                os.makedirs(args.save_path, exist_ok=True)
-                debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
+            #if (i+1) % args.sample_every == 0:
+            #    os.makedirs(args.save_path, exist_ok=True)
+            #    debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
             # save model checkpoints
             if (i+1) % args.save_every == 0:
