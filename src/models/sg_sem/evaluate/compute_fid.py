@@ -2,14 +2,14 @@ import os
 import torch
 from ..model import Generator, MappingNetwork, semantics
 from torch.utils import data
-from common.util import save_image, normalize, get_args
+from common.util import normalize, get_args
+from common.initialize import get_last_model
 from common.loaders import images
 from common.evaluation import fid
 
 
 def parse_args(parser):
-    parser.add_argument('--state-dict-path', type=str, help='State dict path of the model')
-    parser.add_argument('--model-path', type=str, help='Path of the model')
+    parser.add_argument('--save-path', type=str, help='Path of the trained model')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')
     parser.add_argument('--da-path', type=str, help='Domain adaptation path')
@@ -35,9 +35,11 @@ def execute(args):
     latent_dim = 16
     batch_size = 128
     # Load model
-    state_dict = torch.load(args.state_dict_path, map_location='cpu')
+    save_path = args.save_path
+    state_dict_path = get_last_model('nets_ema', save_path)
+    state_dict = torch.load(state_dict_path, map_location='cpu')
 
-    bottleneck_size = get_args(args.model_path)['bottleneck_size']
+    bottleneck_size = get_args(save_path)['bottleneck_size']
     generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork(nc=args.nc)
@@ -81,3 +83,4 @@ def execute(args):
     #print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
     computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {computed_fid}')
+    save_result(save_path, state_dict_path, computed_fid)
