@@ -1,3 +1,4 @@
+import os
 import torch
 from ..model import Generator, MappingNetwork, semantics
 from torch.utils import data
@@ -19,6 +20,13 @@ def parse_args(parser):
     parser.add_argument('--dataset-tgt', type=str, help='Dataset in {dataset_single, dataset_mnist, dataset_svhn}')
     parser.add_argument('--img-size', type=int, default=256, help='Size of the image')
     parser.add_argument('--nc', type=int, default=5, help='Number of classes')
+
+
+def save_result(save_path, state_dict_path, value):
+    filename = os.path.join(save_path, 'fid.txt')
+    with open(filename, 'w') as f:
+        f.write(f'{state_dict_path}\n')
+        f.write(f'{value}\n')
 
 
 @torch.no_grad()

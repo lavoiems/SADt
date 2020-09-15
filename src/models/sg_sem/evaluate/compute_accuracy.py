@@ -1,8 +1,10 @@
+import os
 import math
 import torch
 from ..model import Generator, MappingNetwork, semantics
 import torchvision.utils as vutils
 from common.loaders import images
+from common.initialize import get_last_model
 import torch.nn.functional as F
 from common.initialize import define_last_model
 from common.util import normalize
@@ -40,8 +42,15 @@ def save_image(x, filename):
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
+def save_result(save_path, state_dict_path, value):
+    filename = os.path.join(save_path, 'accuracy.txt')
+    with open(filename, 'w') as f:
+        f.write(f'{state_dict_path}\n')
+        f.write(f'{value}\n')
+
+
 def parse_args(parser):
-    parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
+    parser.add_argument('--save-path', type=str, help='Path to the trained model')
     parser.add_argument('--classifier-path', type=str, help='Path to the classifier model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--dataset-src', type=str, default='dataset_single', help='name of the dataset in {mnist,svhn}')
@@ -55,10 +64,11 @@ def parse_args(parser):
 
 @torch.no_grad()
 def execute(args):
-    state_dict_path = args.state_dict_path
     data_root_src = args.data_root_src
     domain = args.domain
     nz = 16
+    save_path = args.save_path
+    state_dict_path = get_last_model('nets_ema', save_path)
 
     device = 'cuda'
     domain = int(domain)
@@ -82,3 +92,4 @@ def execute(args):
     accuracy = evaluate(src_dataset, nz, domain, sem, mapping, generator, classifier, device)
     print(accuracy)
 
+    save_result(save_path, state_dict_path, accuracy)

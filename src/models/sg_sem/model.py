@@ -352,7 +352,6 @@ def ss_model(ss_path):
         # delete renamed or unused k
         del state_dict[k]
     err = ss.load_state_dict(state_dict, strict=False)
-    #print(err)
     ss.eval()
     return ss
 
