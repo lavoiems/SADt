@@ -9,7 +9,7 @@ from common.evaluation import fid
 
 
 def parse_args(parser):
-    parser.add_argument('--identifier', type=str, requred=True, help='Identifier for saving artefact')
+    parser.add_argument('--identifier', type=str, required=True, help='Identifier for saving artefact')
     parser.add_argument('--save-path', type=str, help='Path of the trained model')
     parser.add_argument('--domain', type=int, help='Domain id [0, 1]')
     parser.add_argument('--ss-path', type=str, help='Self-supervised model path')

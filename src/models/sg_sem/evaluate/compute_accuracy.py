@@ -50,7 +50,7 @@ def save_result(save_path, identifier, state_dict_path, value):
 
 
 def parse_args(parser):
-    parser.add_argument('--identifier', type=str, requred=True, help='Identifier for saving artefact')
+    parser.add_argument('--identifier', type=str, required=True, help='Identifier for saving artefact')
     parser.add_argument('--save-path', type=str, help='Path to the trained model')
     parser.add_argument('--classifier-path', type=str, help='Path to the classifier model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
