@@ -42,14 +42,15 @@ def save_image(x, filename):
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
-def save_result(save_path, domain, state_dict_path, value):
-    filename = os.path.join(save_path, f'accuracy_domain:{domain}.txt')
+def save_result(save_path, identifier, state_dict_path, value):
+    filename = os.path.join(save_path, f'accuracy_id:{identifier}.txt')
     with open(filename, 'w') as f:
         f.write(f'{state_dict_path}\n')
         f.write(f'{value}\n')
 
 
 def parse_args(parser):
+    parser.add_argument('--identifier', type=str, requred=True, help='Identifier for saving artefact')
     parser.add_argument('--save-path', type=str, help='Path to the trained model')
     parser.add_argument('--classifier-path', type=str, help='Path to the classifier model')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
@@ -92,4 +93,4 @@ def execute(args):
     accuracy = evaluate(src_dataset, nz, domain, sem, mapping, generator, classifier, device)
     print(accuracy)
 
-    save_result(save_path, args.domain, state_dict_path, accuracy)
+    save_result(save_path, args.identifier, state_dict_path, accuracy)
