@@ -42,8 +42,8 @@ def save_image(x, filename):
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=2, pad_value=1)
 
 
-def save_result(save_path, state_dict_path, value):
-    filename = os.path.join(save_path, 'accuracy.txt')
+def save_result(save_path, domain, state_dict_path, value):
+    filename = os.path.join(save_path, f'accuracy_domain:{domain}.txt')
     with open(filename, 'w') as f:
         f.write(f'{state_dict_path}\n')
         f.write(f'{value}\n')
@@ -92,4 +92,4 @@ def execute(args):
     accuracy = evaluate(src_dataset, nz, domain, sem, mapping, generator, classifier, device)
     print(accuracy)
 
-    save_result(save_path, state_dict_path, accuracy)
+    save_result(save_path, args.domain, state_dict_path, accuracy)

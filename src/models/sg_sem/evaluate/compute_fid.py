@@ -22,8 +22,8 @@ def parse_args(parser):
     parser.add_argument('--nc', type=int, default=5, help='Number of classes')
 
 
-def save_result(save_path, state_dict_path, value):
-    filename = os.path.join(save_path, 'fid.txt')
+def save_result(save_path, domain, state_dict_path, value):
+    filename = os.path.join(save_path, f'fid_domain:{domain}.txt')
     with open(filename, 'w') as f:
         f.write(f'{state_dict_path}\n')
         f.write(f'{value}\n')
@@ -83,4 +83,4 @@ def execute(args):
     #print(generated.min(), generated.max(), trg_data.min(), trg_data.max())
     computed_fid = fid.calculate_fid(trg_data, generated, 512, device, 2048)
     print(f'FID: {computed_fid}')
-    save_result(save_path, state_dict_path, computed_fid)
+    save_result(save_path, args.domain, state_dict_path, computed_fid)
