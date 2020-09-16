@@ -7,7 +7,7 @@ from common.loaders import images
 from common.initialize import get_last_model
 import torch.nn.functional as F
 from common.initialize import define_last_model
-from common.util import normalize
+from common.util import normalize, get_args
 
 
 def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
@@ -77,7 +77,9 @@ def execute(args):
     state_dict = torch.load(state_dict_path, map_location='cpu')
     generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     generator.load_state_dict(state_dict['generator'])
-    mapping = MappingNetwork(nc=10)
+
+    nr = get_args(save_path)['repr_dim']
+    mapping = MappingNetwork(nr=10)
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
