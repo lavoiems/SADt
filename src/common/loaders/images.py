@@ -323,8 +323,8 @@ class SourceDataset(data.Dataset):
         datas = []
         labels = []
         domains = []
-        #maps = [1, 0, 4, 2, 3]
-        maps = [2, 3, 0, 1, 4]
+        maps = [1, 0, 4, 2, 3]
+        #maps = [2, 3, 0, 1, 4]
         for idx, domain in enumerate(sorted(domain_names)):
             correct = 0
             total = 0
