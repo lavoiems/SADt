@@ -137,7 +137,10 @@ class Generator(nn.Module):
                                upsample=True))  # stack-like
             dim_in = dim_out
 
-        self.y_embed = nn.Linear(nc, dim_out * bs_size * bs_size)
+        self.y_embed = nn.Sequential(
+            nn.Linear(nc, 512),
+            nn.ReLU(),
+            nn.Linear(512, dim_out * bs_size * bs_size))
         # bottleneck blocks
         for _ in range(bottleneck_blocks):
             self.encode.append(
