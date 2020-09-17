@@ -48,7 +48,9 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, args.model_type, args.da_path, nc=args.nc, shape1=[3, args.img_size]).to(device)
+    sem_type = get_args(save_path)['sem_type']
+    sem_path = get_args(save_path)['sem_path'] if hasattr(save_path, 'sem_path') else None
+    sem = semantics(sem_type, sem_path).cuda()
     sem.eval()
 
     dataset = getattr(images, args.dataset_src)(args.data_root_src)
@@ -63,7 +65,7 @@ def execute(args):
     for data in src:
         data = data.to(device)
         d_trg = d[:data.shape[0]]
-        y_trg = sem((data+1)*0.5).argmax(1)
+        y_trg = sem((data+1)*0.5)
         for i in range(5):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, y_trg, d_trg)

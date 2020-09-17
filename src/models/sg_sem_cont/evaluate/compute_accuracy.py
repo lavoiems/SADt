@@ -19,7 +19,7 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-        y = sem((data+1)*0.5).argmax(1)
+        y = sem((data+1)*0.5)
 
         z = torch.randn(N, nz).to(device)
         s = mapping(z, y, d_trg)
@@ -79,11 +79,13 @@ def execute(args):
     generator.load_state_dict(state_dict['generator'])
 
     nr = get_args(save_path)['repr_dim']
-    mapping = MappingNetwork(nr=10)
+    mapping = MappingNetwork(nr=nr)
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
+    sem_type = get_args(save_path)['sem_type']
+    sem_path = get_args(save_path)['sem_path'] if hasattr(save_path, 'sem_path') else None
+    sem = semantics(sem_type, sem_path).cuda()
     sem.eval()
 
     classifier = define_last_model('classifier', args.classifier_path, 'classifier', shape=3, nc=10).to(device)

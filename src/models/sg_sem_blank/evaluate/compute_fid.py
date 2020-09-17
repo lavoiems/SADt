@@ -63,7 +63,7 @@ def execute(args):
         data = data.to(device)
         d_trg = d[:data.shape[0]]
         y_trg = sem((data+1)*0.5).argmax(1)
-        for i in range(5):
+        for i in range(20):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, d_trg)
             gen = generator(data, s_trg)
