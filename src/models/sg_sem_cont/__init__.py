@@ -21,9 +21,8 @@ def execute(args):
     solver = Solver(args)
     dataset = getattr(images, args.dataset)
     src, val, _, _ = dataset(root=args.dataset_loc,
-                            train_batch_size=args.train_batch_size,
-                            test_batch_size=args.test_batch_size,
-                            device=args.device)
+                             train_batch_size=args.train_batch_size,
+                             test_batch_size=args.test_batch_size)
     loaders = Munch(src=src,
                     ref=None,
                     val=val)

@@ -139,11 +139,6 @@ class Solver(nn.Module):
                 log += ' '.join(['%s: [%.4f]' % (key, value) for key, value in all_losses.items()])
                 print(log)
 
-            # generate images for debugging
-            #if (i+1) % args.sample_every == 0:
-            #    os.makedirs(args.save_path, exist_ok=True)
-            #    debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
-
             # save model checkpoints
             if (i+1) % args.save_every == 0:
                 self._save_checkpoint(step=i+1, checkpoint=args.checkpoint)

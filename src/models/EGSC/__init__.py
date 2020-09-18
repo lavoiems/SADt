@@ -47,7 +47,6 @@ def parse_args(parser):
     parser.add_argument('--bottleneck_size', type=int, default=64, help='Spatial dimension of the bottleneck of the generator')
     parser.add_argument('--bottleneck_blocks', type=int, default=2, help='Number of bottleneck block of the generator')
     parser.add_argument('--max_conv_dim', type=int, default=512, help='Maximum number of dim')
-    parser.add_argument('--dataset', type=str, default='visda', help='Dataset name')
 
     # weight for objective functions
     parser.add_argument('--lambda_reg', type=float, default=1, help='Weight for R1 regularization')
@@ -68,10 +67,10 @@ def parse_args(parser):
     parser.add_argument('--num_outs_per_domain', type=int, default=10, help='Number of generated images per domain during sampling')
 
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in DataLoader')
-    parser.add_argument('--cluster_path', type=str, default='.', help='Path to cluster model')
-    parser.add_argument('--ss_path', type=str, default='.', help='Path to self-supervision model')
+
 
     # directory for training
+    parser.add_argument('--dataset', type=str, default='visda', help='Dataset name')
     parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')
 
     # step size
