@@ -21,14 +21,15 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
         data, label = data.to(device), label.to(device)
         y = sem((data+1)*0.5)
 
-        z = torch.randn(N, nz).to(device)
-        s = mapping(z, y, d_trg)
-        gen = generator(data, s)
+        for i in range(10):
+            z = torch.randn(N, nz).to(device)
+            s = mapping(z, y, d_trg)
+            gen = generator(data, s)
 
-        gen = normalize(gen)
-        pred = F.softmax(classifier(gen), 1).argmax(1)
-        correct += (pred == label).sum().cpu().float()
-        total += len(pred)
+            gen = normalize(gen)
+            pred = F.softmax(classifier(gen), 1).argmax(1)
+            correct += (pred == label).sum().cpu().float()
+            total += len(pred)
     accuracy = correct / total
     accuracy = accuracy.cpu().numpy()
     print(accuracy)
@@ -84,7 +85,9 @@ def execute(args):
     mapping.to(device)
 
     sem_type = get_args(save_path)['sem_type']
-    sem_path = get_args(save_path)['sem_path'] if hasattr(save_path, 'sem_path') else None
+    sem_path = get_args(save_path)['sem_path'] if 'sem_path' in get_args(save_path) else None
+    print(get_args(save_path))
+    print(sem_type, sem_path)
     sem = semantics(sem_type, sem_path).cuda()
     sem.eval()
 
