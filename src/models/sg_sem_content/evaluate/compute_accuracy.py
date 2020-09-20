@@ -23,7 +23,7 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
 
         z = torch.randn(N, nz).to(device)
         s = mapping(z, d_trg)
-        gen = generator(data, y, s)
+        gen = generator(data, s)
 
         gen = normalize(gen)
         pred = F.softmax(classifier(gen), 1).argmax(1)
@@ -75,7 +75,7 @@ def execute(args):
     domain = int(domain)
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
-    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim, nc=10).to(device)
+    generator = Generator(bottleneck_size=64, bottleneck_blocks=4, img_size=args.img_size, max_conv_dim=args.max_conv_dim).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])

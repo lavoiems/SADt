@@ -113,11 +113,10 @@ class AdainResBlk(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_blocks=2, bottleneck_size=64, nc=5):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_blocks=2, bottleneck_size=64):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
-        self.nc = nc
         self.from_rgb = nn.Conv2d(3, dim_in, 3, 1, 1)
         self.encode = nn.ModuleList()
         self.decode = nn.ModuleList()
@@ -126,7 +125,6 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
         # down/up-sampling blocks
-        bs_size = int(bottleneck_size/4)
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
         for _ in range(repeat_num):
             dim_out = min(dim_in*2, max_conv_dim)
@@ -137,11 +135,6 @@ class Generator(nn.Module):
                                upsample=True))  # stack-like
             dim_in = dim_out
 
-        self.y_embed = nn.Sequential(
-            nn.Linear(nc, 512),
-            nn.ReLU(),
-            nn.Linear(512, dim_out * bs_size * bs_size))
-        #self.y_embed = nn.Linear(nc, dim_out*bs_size*bs_size)
         # bottleneck blocks
         for _ in range(bottleneck_blocks):
             self.encode.append(
@@ -149,13 +142,10 @@ class Generator(nn.Module):
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
 
-    def forward(self, x, y, s):
+    def forward(self, x, s):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
-        #oy = self.y_embed(one_hot_embedding(y, self.nc))
-        #oy = oy.view(*x.shape)
-        #x = x * oy
         for block in self.decode:
             x = block(x, s)
         return self.to_rgb(x)
@@ -281,7 +271,7 @@ class Discriminator(nn.Module):
 
 
 def build_model(args):
-    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size, nc=args.num_classes)
+    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size)
     mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains)
     style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains)
     discriminator = Discriminator(args.img_size, args.num_domains, nc=args.num_classes)

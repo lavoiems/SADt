@@ -12,8 +12,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-
-
 class ResBlk(nn.Module):
     def __init__(self, dim_in, dim_out, actv=nn.LeakyReLU(0.2),
                  normalize=False, downsample=False):

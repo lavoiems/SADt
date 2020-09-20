@@ -166,7 +166,7 @@ def compute_d_loss(nets, args, x_real, y_real, d_org, d_trg, z_trg=None, x_trg=N
         else:  # x_ref is not None
             s_trg = nets.style_encoder(x_trg, d_trg)
 
-        x_fake = nets.generator(x_real, y_real, s_trg)
+        x_fake = nets.generator(x_real, s_trg)
     out = nets.discriminator(x_fake, d_trg)
     loss_fake = adv_loss(out, 0)
 
@@ -190,7 +190,7 @@ def compute_g_loss(nets, args, x_real, y_real, d_org, d_trg, lambda_ds, z_trgs=N
     else:
         s_trg = nets.style_encoder(x_ref, d_trg)
 
-    x_fake = nets.generator(x_real, y_real, s_trg)
+    x_fake = nets.generator(x_real, s_trg)
     out = nets.discriminator(x_fake, d_trg)
     pred = nets.discriminator.classify(x_fake, d_trg)
     loss_class = F.cross_entropy(pred, y_real)
@@ -205,12 +205,12 @@ def compute_g_loss(nets, args, x_real, y_real, d_org, d_trg, lambda_ds, z_trgs=N
         s_trg2 = nets.mapping_network(z_trg2, d_trg)
     else:
         s_trg2 = nets.style_encoder(x_ds, d_trg)
-    x_fake2 = nets.generator(x_real, y_real, s_trg2).detach()
+    x_fake2 = nets.generator(x_real, s_trg2).detach()
     loss_ds = torch.mean(torch.abs(x_fake - x_fake2))
 
     # cycle-consistency loss
     s_org = nets.style_encoder(x_real, d_org)
-    x_rec = nets.generator(x_fake, y_real, s_org)
+    x_rec = nets.generator(x_fake, s_org)
     loss_cyc = torch.mean(torch.abs(x_rec - x_real))
 
     loss = loss_adv + args.lambda_sty * loss_sty \
@@ -291,7 +291,7 @@ def translate_using_latent(nets, args, x_src, y_src, d_trg_list, z_trg_list, psi
     for i, d_trg in enumerate(d_trg_list):
         for z_trg in z_trg_list:
             s_trg = nets.mapping_network(z_trg, d_trg)
-            x_fake = nets.generator(x_src, y_src, s_trg)
+            x_fake = nets.generator(x_src, s_trg)
             x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)

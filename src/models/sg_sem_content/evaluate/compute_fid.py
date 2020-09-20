@@ -41,7 +41,7 @@ def execute(args):
     state_dict = torch.load(state_dict_path, map_location='cpu')
 
     bottleneck_size = get_args(save_path)['bottleneck_size']
-    generator = Generator(nc=args.nc, bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
@@ -63,10 +63,10 @@ def execute(args):
         data = data.to(device)
         d_trg = d[:data.shape[0]]
         y_trg = sem((data+1)*0.5).argmax(1)
-        for i in range(5):
+        for i in range(20):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, d_trg)
-            gen = generator(data, y_trg, s_trg)
+            gen = generator(data, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
     generated = normalize(generated)
