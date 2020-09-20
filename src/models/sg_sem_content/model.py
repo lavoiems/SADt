@@ -153,9 +153,9 @@ class Generator(nn.Module):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
-        oy = self.y_embed(one_hot_embedding(y, self.nc))
-        oy = oy.view(*x.shape)
-        x = x * oy
+        #oy = self.y_embed(one_hot_embedding(y, self.nc))
+        #oy = oy.view(*x.shape)
+        #x = x * oy
         for block in self.decode:
             x = block(x, s)
         return self.to_rgb(x)
