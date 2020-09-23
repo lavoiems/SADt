@@ -46,7 +46,7 @@ class Solver(nn.Module):
             CheckpointIO(ospj(args.model_path, 'nets_ema:{:06d}.ckpt'), **self.nets_ema),
             CheckpointIO(ospj(args.model_path, 'optims:{:06d}.ckpt'), **self.optims)]
 
-        self.to(self.device)
+        #self.to(self.device)
         for name, network in self.named_children():
             # Do not initialize the EMA parameters
             if ('ema' not in name):
