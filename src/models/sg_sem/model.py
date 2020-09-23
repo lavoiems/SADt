@@ -282,15 +282,6 @@ def build_model(args):
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)
 
-    if torch.cuda.device_count() > 1:
-        generator = nn.DataParallel(generator)
-        mapping_network = nn.DataParallel(mapping_network)
-        style_encoder = nn.DataParallel(style_encoder)
-    else:
-        generator = generator.cuda()
-        mapping_network = mapping_network.cuda()
-        style_encoder = style_encoder.cuda()
-    discriminator = discriminator.cuda()
 
     nets = Munch(generator=generator,
                  mapping_network=mapping_network,
