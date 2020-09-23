@@ -161,13 +161,14 @@ class MappingNetwork(nn.Module):
         super().__init__()
         self.nr = nr
         layers = []
-        layers += [nn.Linear(latent_dim+nr, 512)]
+        layers += [nn.Linear(latent_dim+512, 512)]
         layers += [nn.ReLU()]
         for _ in range(3):
             layers += [nn.Linear(512, 512)]
             layers += [nn.ReLU()]
         self.shared = nn.Sequential(*layers)
 
+        self.f_embed = nn.Linear(nr, 512)
         self.unshared = nn.ModuleList()
         for _ in range(num_domains):
             self.unshared += [nn.Sequential(nn.Linear(512, 512),
@@ -183,6 +184,7 @@ class MappingNetwork(nn.Module):
         if len(f.shape) > 2:
             of = F.adaptive_avg_pool2d(of, (1, 1))
             of = of.view(of.shape[0], -1)
+        of = self.f_embed(of)
         o = torch.cat((z, of), 1)
         h = self.shared(o)
         out = []

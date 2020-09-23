@@ -34,7 +34,8 @@ def execute(args):
     # Load model
     state_dict = torch.load(state_dict_path, map_location='cpu')
     bottleneck_size = get_args(args.model_path)['bottleneck_size']
-    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4).to(device)
+    max_conv_dim = get_args(args.model_path)['max_conv_dim']
+    generator = Generator(bottleneck_size=bottleneck_size, max_conv_dim=max_conv_dim, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
@@ -43,7 +44,12 @@ def execute(args):
     sem = semantics(args.ss_path, 'vmtc_repr', args.da_path, nc=5).to(device)
 
     dataset = dataset_single(args.data_root_src)
-    idxs = [0, 15, 31, 50, 60]
+    #idxs = [0, 15, 31, 50, 60] # All
+    idxs = [0, 1, 5, 6, 7] # Bird
+    idxs = [0, 1, 3, 4, 6] # Dog
+    idxs = [1, 5, 6, 7, 8] # Flower
+    idxs = [0, 1, 2, 3, 4] # Speedboat
+    idxs = [0, 5, 2, 3, 4] # Tiger
     data = []
     for i in range(N):
         idx = idxs[i]

@@ -46,7 +46,7 @@ class Solver(nn.Module):
             CheckpointIO(ospj(args.model_path, 'nets_ema:{:06d}.ckpt'), **self.nets_ema),
             CheckpointIO(ospj(args.model_path, 'optims:{:06d}.ckpt'), **self.optims)]
 
-        self.to(self.device)
+        #self.to(self.device)
         for name, network in self.named_children():
             # Do not initialize the EMA parameters
             if ('ema' not in name):
@@ -138,11 +138,6 @@ class Solver(nn.Module):
                         all_losses[prefix + key] = value
                 log += ' '.join(['%s: [%.4f]' % (key, value) for key, value in all_losses.items()])
                 print(log)
-
-            # generate images for debugging
-            #if (i+1) % args.sample_every == 0:
-            #    os.makedirs(args.save_path, exist_ok=True)
-            #    debug_image(nets_ema, args, inputs=inputs_val, step=i+1)
 
             # save model checkpoints
             if (i+1) % args.save_every == 0:

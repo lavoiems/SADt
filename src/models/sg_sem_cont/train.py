@@ -157,7 +157,6 @@ class Solver(nn.Module):
 
 
 def compute_d_loss(nets, args, x_real, f_real, d_org, d_trg, z_trg=None, x_trg=None):
-    assert (z_trg is None) != (x_trg is None)
     # with real images
     x_real.requires_grad_()
     out = nets.discriminator(x_real, d_org)

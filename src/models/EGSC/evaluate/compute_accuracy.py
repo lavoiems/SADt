@@ -16,9 +16,9 @@ def evaluate(loader, trg_dataset, domain, style_encoder, vgg, generator, classif
         N = len(data)
         d_trg = torch.tensor(domain).repeat(N).long().to(device)
         data, label = data.to(device), label.to(device)
-        f = vgg(data) # TODO align data
+        f = vgg(data)
         data = data*2 - 1
-        for i in range(10):
+        for i in range(1):
             x_idxs = torch.randint(low=0, high=len(trg_dataset), size=(N,))
             x_trg = torch.stack([trg_dataset[idx][0].to(device) for idx in x_idxs])
             x_trg = x_trg * 2 - 1

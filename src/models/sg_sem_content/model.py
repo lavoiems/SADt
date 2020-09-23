@@ -126,8 +126,8 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Conv2d(dim_in, 3, 1, 1, 0))
         # down/up-sampling blocks
-        bs_size = int(bottleneck_size/4)
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
+
         for _ in range(repeat_num):
             dim_out = min(dim_in*2, max_conv_dim)
             self.encode.append(
@@ -137,13 +137,19 @@ class Generator(nn.Module):
                                upsample=True))  # stack-like
             dim_in = dim_out
 
-        self.y_embed = nn.Linear(nc, dim_out * bs_size * bs_size)
         # bottleneck blocks
         for _ in range(bottleneck_blocks):
             self.encode.append(
                 ResBlk(dim_out, dim_out, normalize=True))
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
+        bs_size = int(bottleneck_size / 4)
+        self.y_embed = nn.Linear(nc, dim_out * bs_size * bs_size)
+        #self.y_embed = nn.Sequential(
+        #                nn.Linear(nc, 512),
+        #                nn.ReLU(True),
+        #                nn.Linear(512, dim_out * bs_size * bs_size))
+        #self.cat_oy = ResBlk(dim_out*2, dim_out, normalize=True)
 
     def forward(self, x, y, s):
         x = self.from_rgb(x)
@@ -151,10 +157,12 @@ class Generator(nn.Module):
             x = block(x)
         oy = self.y_embed(one_hot_embedding(y, self.nc))
         oy = oy.view(*x.shape)
-        x = x * oy
+        o = x * oy
+        #o = torch.cat((x, oy), 1)
+        #o = self.cat_oy(o)
         for block in self.decode:
-            x = block(x, s)
-        return self.to_rgb(x)
+            o = block(o, s)
+        return self.to_rgb(o)
 
 
 def one_hot_embedding(labels, num_classes):
