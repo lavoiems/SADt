@@ -6,6 +6,7 @@ from common.util import normalize, get_args
 from common.initialize import get_last_model
 from common.loaders import images
 from common.evaluation import fid
+import torchvision.utils as vutils
 
 
 def parse_args(parser):
@@ -29,6 +30,9 @@ def save_result(save_path, identifier, state_dict_path, value):
         f.write(f'{state_dict_path}\n')
         f.write(f'{value}\n')
 
+def save_image(x, ncol, filename):
+    vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
+
 
 @torch.no_grad()
 def execute(args):
@@ -41,7 +45,7 @@ def execute(args):
     state_dict = torch.load(state_dict_path, map_location='cpu')
 
     bottleneck_size = get_args(save_path)['bottleneck_size']
-    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size).to(device)
+    generator = Generator(bottleneck_size=bottleneck_size, bottleneck_blocks=4, img_size=args.img_size, nc=args.nc).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()
     mapping.load_state_dict(state_dict['mapping_network'])
@@ -63,14 +67,14 @@ def execute(args):
         data = data.to(device)
         d_trg = d[:data.shape[0]]
         y_trg = sem((data+1)*0.5).argmax(1)
-        for i in range(20):
+        for i in range(10):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, d_trg)
-            gen = generator(data, s_trg)
+            gen = generator(data, y_trg, s_trg)
             generated.append(gen)
     generated = torch.cat(generated)
     generated = normalize(generated)
-    #save_image(generated[:4], 'Debug.png')
+    save_image(generated[:16], 4, 'Debug.png')
 
     #print('Fetching target data')
     trg_data = []

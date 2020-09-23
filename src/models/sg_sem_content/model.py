@@ -113,10 +113,11 @@ class AdainResBlk(nn.Module):
 
 
 class Generator(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_blocks=2, bottleneck_size=64):
+    def __init__(self, img_size=256, style_dim=64, max_conv_dim=512, bottleneck_blocks=2, bottleneck_size=64, nc=5):
         super().__init__()
         dim_in = 2**14 // img_size
         self.img_size = img_size
+        self.nc = nc
         self.from_rgb = nn.Conv2d(3, dim_in, 3, 1, 1)
         self.encode = nn.ModuleList()
         self.decode = nn.ModuleList()
@@ -126,6 +127,7 @@ class Generator(nn.Module):
             nn.Conv2d(dim_in, 3, 1, 1, 0))
         # down/up-sampling blocks
         repeat_num = int(np.log2(img_size)) - int(np.log2(bottleneck_size/4))
+
         for _ in range(repeat_num):
             dim_out = min(dim_in*2, max_conv_dim)
             self.encode.append(
@@ -141,14 +143,26 @@ class Generator(nn.Module):
                 ResBlk(dim_out, dim_out, normalize=True))
             self.decode.insert(
                 0, AdainResBlk(dim_out, dim_out, style_dim))
+        bs_size = int(bottleneck_size / 4)
+        self.y_embed = nn.Linear(nc, dim_out * bs_size * bs_size)
+        #self.y_embed = nn.Sequential(
+        #                nn.Linear(nc, 512),
+        #                nn.ReLU(True),
+        #                nn.Linear(512, dim_out * bs_size * bs_size))
+        #self.cat_oy = ResBlk(dim_out*2, dim_out, normalize=True)
 
-    def forward(self, x, s):
+    def forward(self, x, y, s):
         x = self.from_rgb(x)
         for block in self.encode:
             x = block(x)
+        oy = self.y_embed(one_hot_embedding(y, self.nc))
+        oy = oy.view(*x.shape)
+        o = x * oy
+        #o = torch.cat((x, oy), 1)
+        #o = self.cat_oy(o)
         for block in self.decode:
-            x = block(x, s)
-        return self.to_rgb(x)
+            o = block(o, s)
+        return self.to_rgb(o)
 
 
 def one_hot_embedding(labels, num_classes):
@@ -271,7 +285,7 @@ class Discriminator(nn.Module):
 
 
 def build_model(args):
-    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size)
+    generator = Generator(args.img_size, args.style_dim, args.max_conv_dim, args.bottleneck_blocks, args.bottleneck_size, nc=args.num_classes)
     mapping_network = MappingNetwork(args.latent_dim, args.style_dim, args.num_domains)
     style_encoder = StyleEncoder(args.img_size, args.style_dim, args.num_domains)
     discriminator = Discriminator(args.img_size, args.num_domains, nc=args.num_classes)

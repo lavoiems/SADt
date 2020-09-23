@@ -12,7 +12,7 @@ def save_image(x, ncol, filename):
 
 def parse_args(parser):
     parser.add_argument('--state-dict-path', type=str, help='Path to the model state dict')
-    parser.add_argument('--dataset-src', type=str, help='Path to the data')
+    parser.add_argument('--dataset-src', type=str, help='Name of the dataset')
     parser.add_argument('--data-root-src', type=str, help='Path to the data')
     parser.add_argument('--domain', type=int, help='Domain id {0, 1}')
     parser.add_argument('--img-size', type=int, default=32, help='Size of the image')
@@ -38,7 +38,7 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(None, 'vmt_cluster', args.da_path, shape1=[3, 32], nc=10).cuda()
+    sem = semantics(None, 'vmt_cluster', args.da_path, shape=[3, 32], nc=10).cuda()
     sem.eval()
 
     dataset = getattr(images, args.dataset_src)
@@ -48,6 +48,7 @@ def execute(args):
     data = data.to(device)
     print(data.min(), data.max())
 
+    data = data * 2 - 1
     y_src = sem((data+1)*0.5).argmax(1)
 
     # Infer translated images
@@ -70,3 +71,19 @@ def execute(args):
     results[1::2] = x_concat[len(x_concat)//2:]
     results = torch.stack(results)
     save_image(results, 10, f'{name}.png')
+
+
+    N = 10
+    R = 5
+    data = torch.cat([data[:N]]*R, 0)
+    y_trg = torch.cat([y_src[:N]]*R, 0)
+    d_trg = torch.tensor(domain).repeat(N*R).long().to(device)
+    z_trg = torch.randn(R, latent_dim).to(device)
+    z_trg = [torch.stack([z]*N) for z in z_trg]
+    z_trg = torch.cat(z_trg, 0)
+    print(z_trg.shape, y_trg.shape, d_trg.shape)
+    s_trg = mapping(z_trg, y_trg, d_trg)
+    x_fake = generator(data, s_trg)
+    x_concat = torch.cat((data[:N], x_fake), 0)
+    save_image(x_concat, 10, f'{name}_z.png')
+

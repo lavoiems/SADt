@@ -49,7 +49,7 @@ def execute(args):
     mapping.to(device)
 
     sem_type = get_args(save_path)['sem_type']
-    sem_path = get_args(save_path)['sem_path'] if hasattr(save_path, 'sem_path') else None
+    sem_path = get_args(save_path)['sem_path'] if 'sem_path' in get_args(save_path) else None
     sem = semantics(sem_type, sem_path).cuda()
     sem.eval()
 
@@ -66,7 +66,7 @@ def execute(args):
         data = data.to(device)
         d_trg = d[:data.shape[0]]
         y_trg = sem((data+1)*0.5)
-        for i in range(5):
+        for i in range(15):
             z_trg = torch.randn(data.shape[0], latent_dim, device=device)
             s_trg = mapping(z_trg, y_trg, d_trg)
             gen = generator(data, s_trg)
