@@ -65,9 +65,9 @@ def execute(args):
     x_concat = [data]
 
     print(z_trg.shape, y_src.shape, d_trg.shape)
-    s_trg = mapping(z_trg, y_src, d_trg)
+    s_trg = mapping(z_trg, d_trg)
     print(data.shape, s_trg.shape)
-    x_fake = generator(data, s_trg)
+    x_fake = generator(data, y_src, s_trg)
     x_concat += [x_fake]
 
     x_concat = torch.cat(x_concat, dim=0)
