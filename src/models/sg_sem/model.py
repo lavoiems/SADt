@@ -192,7 +192,7 @@ class MappingNetwork(nn.Module):
 
 
 class StyleEncoder(nn.Module):
-    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, nc=5, n_unshared_layers=0):
+    def __init__(self, img_size=256, style_dim=64, num_domains=2, max_conv_dim=512, nc=5, n_unshared_layers=3):
         super().__init__()
         self.num_domains = num_domains
         dim_in = 2**14 // img_size
@@ -215,7 +215,8 @@ class StyleEncoder(nn.Module):
             unshared = []
             for _ in range(n_unshared_layers):
                 unshared += [nn.Linear(dim_out, dim_out),
-                                  nn.LeakyReLU(0.2)]
+                             nn.LeakyReLU(0.2),
+                             ]
             unshared += [nn.Linear(dim_out, style_dim)]
             self.unshared += [nn.Sequential(*unshared)]
 
@@ -280,6 +281,7 @@ def build_model(args):
     generator_ema = copy.deepcopy(generator)
     mapping_network_ema = copy.deepcopy(mapping_network)
     style_encoder_ema = copy.deepcopy(style_encoder)
+
 
     nets = Munch(generator=generator,
                  mapping_network=mapping_network,

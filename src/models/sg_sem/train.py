@@ -47,6 +47,12 @@ class Solver(nn.Module):
             CheckpointIO(ospj(args.model_path, 'optims:{:06d}.ckpt'), **self.optims)]
 
         self.to(self.device)
+
+        if torch.cuda.device_count() > 1:
+            self.nets.generator = nn.DataParallel(self.nets.generator)
+            self.nets.mapping_network = nn.DataParallel(self.nets.mapping_network)
+            self.nets.style_encoder = nn.DataParallel(self.nets.style_encoder)
+
         for name, network in self.named_children():
             # Do not initialize the EMA parameters
             if ('ema' not in name):
