@@ -35,6 +35,7 @@ def execute(args):
     state_dict = torch.load(state_dict_path, map_location='cpu')
     bottleneck_size = get_args(args.model_path)['bottleneck_size']
     max_conv_dim = get_args(args.model_path)['max_conv_dim']
+    print(bottleneck_size, max_conv_dim)
     generator = Generator(bottleneck_size=bottleneck_size, max_conv_dim=max_conv_dim, bottleneck_blocks=4).to(device)
     generator.load_state_dict(state_dict['generator'])
     mapping = MappingNetwork()

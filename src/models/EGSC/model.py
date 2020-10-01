@@ -204,7 +204,7 @@ class StyleEncoder(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512, nc=5):
+    def __init__(self, img_size=256, num_domains=2, max_conv_dim=512):
         super().__init__()
         dim_in = 2**14 // img_size
         blocks = []
@@ -221,7 +221,6 @@ class Discriminator(nn.Module):
         blocks += [nn.LeakyReLU(0.2)]
         self.main = nn.Sequential(*blocks)
         self.dis = nn.Conv2d(dim_out, num_domains, 1, 1, 0)
-        self.classifier = nn.ModuleList([nn.Linear(dim_out, nc) for _ in range(num_domains)])
 
     def forward(self, x, d):
         out = self.main(x)

@@ -25,8 +25,8 @@ def execute(args):
 
     dataset = getattr(images, args.dataset)
     src, val, _, _ = dataset(root=args.dataset_loc,
-                            train_batch_size=args.train_batch_size,
-                            test_batch_size=args.test_batch_size,
+                             train_batch_size=args.train_batch_size,
+                             test_batch_size=args.test_batch_size,
                             semantics=semantics,
                             nc=args.num_classes,
                             device=args.device)

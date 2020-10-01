@@ -27,6 +27,9 @@ def evaluate(loader, nz, domain, sem, mapping, generator, classifier, device):
             gen = generator(data, s)
 
             gen = normalize(gen)
+            save_image(normalize(data), 'data.png')
+            save_image(gen, 'gen.png')
+            exit(0)
             pred = F.softmax(classifier(gen), 1).argmax(1)
             correct += (pred == label).sum().cpu().float()
             total += len(pred)

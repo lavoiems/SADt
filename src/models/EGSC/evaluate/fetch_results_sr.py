@@ -7,7 +7,6 @@ from torchvision.models import vgg19
 
 
 def save_image(x, ncol, filename):
-    print(x.min(), x.max())
     x.clamp_(-1, 1)
     x = (x + 1) / 2
     vutils.save_image(x.cpu(), filename, nrow=ncol, padding=0)
@@ -46,6 +45,7 @@ def execute(args):
 
     feature_blocks = 29 if args.img_size == 256 else 8
     vgg = vgg19(pretrained=True).features[:feature_blocks].to(device)
+    vgg.eval()
 
     dataset = getattr(images, args.dataset_src)
     src_dataset = dataset(data_root_src)

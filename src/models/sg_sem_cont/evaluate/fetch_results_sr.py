@@ -40,7 +40,10 @@ def execute(args):
     mapping.load_state_dict(state_dict['mapping_network'])
     mapping.to(device)
 
-    sem = semantics(args.ss_path, 'vmtc_repr', args.da_path, nc=5).to(device)
+    sem_type = get_args(save_path)['sem_type']
+    sem_path = get_args(save_path)['sem_path'] if 'sem_path' in get_args(save_path) else None
+    sem = semantics(sem_type, sem_path).cuda()
+    sem.eval()
 
     dataset = dataset_single(args.data_root_src)
     idxs = [0, 15, 31, 50, 60]
@@ -50,22 +53,20 @@ def execute(args):
         data.append(dataset[idx])
     data = torch.stack(data).to(device)
 
-    y_src = sem((data+1)*0.5).argmax(1)
-    print(y_src)
+    f_src = sem((data+1)*0.5)
 
     # Infer translated images
     d_trg = torch.tensor(domain).repeat(25).long().to(device)
     z_trg = torch.cat(5*[torch.randn(1, 5, latent_dim)]).to(device)
     z_trg = z_trg.transpose(0,1).reshape(25, latent_dim)
     data = torch.cat(5*[data])
-    y_src = torch.cat(5*[y_src])
-    print(z_trg.shape, data.shape, y_src.shape)
+    f_src = torch.cat(5*[f_src])
+    print(z_trg.shape, data.shape, f_src.shape)
 
     N, C, H, W = data.size()
     x_concat = [data]
 
-    print(z_trg.shape, y_src.shape, d_trg.shape)
-    s_trg = mapping(z_trg, y_src, d_trg)
+    s_trg = mapping(z_trg, f_src, d_trg)
     print(data.shape, s_trg.shape)
     x_fake = generator(data, s_trg)
     x_concat += [x_fake]

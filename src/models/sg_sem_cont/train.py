@@ -197,8 +197,7 @@ def compute_g_loss(nets, f_net, args, x_real, f_real, d_org, d_trg, lambda_ds, z
     out = nets.discriminator(x_fake, d_trg)
     loss_adv = adv_loss(out, 1)
 
-    with torch.no_grad():
-        f_fake = f_net((x_fake+1)/2)
+    f_fake = f_net((x_fake+1)/2)
 
     loss_sem = torch.mean(torch.abs(f_real - f_fake))
 

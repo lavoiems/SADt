@@ -40,9 +40,9 @@ class Solver(nn.Module):
                 weight_decay=args.weight_decay)
 
         self.ckptios = [
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets.ckpt'), **self.nets),
-            CheckpointIO(ospj(args.model_path, '{:06d}_nets_ema.ckpt'), **self.nets_ema),
-            CheckpointIO(ospj(args.model_path, '{:06d}_optims.ckpt'), **self.optims)]
+            CheckpointIO(ospj(args.model_path, 'nets:{:06d}.ckpt'), **self.nets),
+            CheckpointIO(ospj(args.model_path, 'nets_ema:{:06d}.ckpt'), **self.nets_ema),
+            CheckpointIO(ospj(args.model_path, 'optims:{:06d}.ckpt'), **self.optims)]
 
         for name, network in self.named_children():
             # Do not initialize the EMA parameters
@@ -81,18 +81,21 @@ class Solver(nn.Module):
         inputs_val = next(fetcher_val)
 
         # resume training if necessary
+        resume_iter = args.resume_iter
         if args.resume_iter > 0:
-            self._load_checkpoint(args.resume_iter)
+            self._load_checkpoint(resume_iter)
 
         # remember the initial value of ds weight
         print('Start training...')
         start_time = time.time()
-        for i in range(args.resume_iter, args.total_iters):
+        for i in range(resume_iter, args.total_iters):
             # fetch images and labels
             inputs = next(fetcher)
             x_real, d_org = inputs.x_src, inputs.d_src
             x_trg, d_trg = inputs.x_src2, inputs.d_src2
-            features_real = self.vgg((x_real + 1) / 2)
+
+            with torch.no_grad():
+                features_real = self.vgg((x_real + 1) / 2)
 
             # train the discriminator
             d_loss, d_losses_ref = compute_d_loss(
@@ -155,19 +158,6 @@ def compute_d_loss(nets, args, x_real, features_real, d_org, d_trg, x_trg):
                        reg=loss_reg.item())
 
 
-def gram_matrix(inputs):
-    """Gram matrix."""
-    a, b, c, d = inputs.size()
-
-    # resise F_XL into \hat F_XL
-    features = inputs.view(a * b, c * d)
-
-    # compute the gram product
-    G = torch.mm(features, features.t())
-
-    return G.div(a * b * c * d)
-
-
 def compute_g_loss(nets, vgg, args, x_real, features_real, d_org, d_trg, x_ref):
     # adversarial loss
     s_trg = nets.style_encoder(x_ref, d_trg)
@@ -199,6 +189,20 @@ def compute_g_loss(nets, vgg, args, x_real, features_real, d_org, d_trg, x_ref):
                        vae=loss_vae.item(),
                        #sty=loss_sty.item(),
                        cyc=loss_cyc.item())
+
+
+def gram_matrix(inputs):
+    """Gram matrix."""
+    a, b, c, d = inputs.size()
+
+    # resise F_XL into \hat F_XL
+    features = inputs.view(a * b, c * d)
+
+    # compute the gram product
+    G = torch.mm(features, features.t())
+
+    return G.div(a * b * c * d)
+
 
 
 def moving_average(model, model_test, beta=0.999):

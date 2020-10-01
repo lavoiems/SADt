@@ -6,7 +6,7 @@ import os
 from munch import Munch
 
 from .train import Solver
-from common.loaders.images import visda, mnist_svhn
+from common.loaders import images
 from . import model
 
 
@@ -19,16 +19,10 @@ def execute(args):
     print(args)
 
     solver = Solver(args)
-    if args.dataset == 'visda':
-        src, val, _, _ = visda(root=args.dataset_loc,
-                               train_batch_size=args.train_batch_size,
-                               test_batch_size=args.test_batch_size)
-    elif args.dataset == 'mnist_svhn':
-        src, val, _, _ = mnist_svhn(root=args.dataset_loc,
-                                    train_batch_size=args.train_batch_size,
-                                    test_batch_size=args.test_batch_size)
-    else:
-        print(f'Unsupported dataset: {args.dataset}')
+    dataset = getattr(images, args.dataset)
+    src, val, _, _ = dataset(root=args.dataset_loc,
+                             train_batch_size=args.train_batch_size,
+                             test_batch_size=args.test_batch_size)
     loaders = Munch(src=src,
                     ref=None,
                     val=val)
@@ -39,7 +33,7 @@ def parse_args(parser):
     # model arguments
     parser.add_argument('--img_size', type=int, default=256, help='Image resolution')
     parser.add_argument('--num_domains', type=int, default=2, help='Number of domains')
-    parser.add_argument('--num_classes', type=int, default=5, help='Number of classes')
+    parser.add_argument('--n_repr', type=int, default=512, help='Number of classes')
     parser.add_argument('--latent_dim', type=int, default=16, help='Latent vector dimension')
     parser.add_argument('--hidden_dim', type=int, default=512,help='Hidden dimension of mapping network')
     parser.add_argument('--style_dim', type=int, default=64, help='Style code dimension')
@@ -71,7 +65,7 @@ def parse_args(parser):
 
     # directory for training
     parser.add_argument('--dataset', type=str, default='visda', help='Dataset name')
-    parser.add_argument('--dataset_loc', type=str, default='.data', help='Directory containing datasets')
+    parser.add_argument('--dataset_loc', type=str, default='./data', help='Directory containing datasets')
 
     # step size
     parser.add_argument('--print_every', type=int, default=1000)
